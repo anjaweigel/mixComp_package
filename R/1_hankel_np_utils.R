@@ -252,7 +252,7 @@
 
   if(missing(discrete)){} # allowed be missing
   # but if it is not missing needs to fulfil requirements
-  else if(is.null(discret) || discrete != TRUE) 
+  else if(is.null(discrete) || discrete != TRUE) 
     stop("The 'discrete' attribute of the Rdat object is not set to TRUE, however
          this function only works for discrete data.")
   
