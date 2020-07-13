@@ -1,0 +1,64 @@
+### Imports ---------------------------------------------
+
+import("stats")
+
+importFrom("graphics"
+         , plot, lines, abline
+         , hist, rect
+         , par
+         , text, title , axis, mtext
+           )
+		   
+importFrom("grDevices", rgb)
+
+importFrom("boot", boot)
+
+importFrom("cluster", clara)
+
+importFrom("expm", sqrtm)
+
+importFrom("matrixcalc", hankel.matrix)
+
+importFrom("Rsolnp", solnp)
+
+
+
+### This package exports ---------------------------------
+
+
+export(
+    Mix,
+    is.Mix,
+    dMix,
+    rMix,
+    is.rMix,
+    datMix,
+    is.datMix,
+    RtoDat,
+    nonparamHankel,
+    paramHankel,
+    paramHankel.scaled,
+    L2.disc,
+    L2.boot.disc,
+    hellinger.disc,
+    hellinger.boot.disc,
+    hellinger.cont,
+    hellinger.boot.cont,
+    mix.lrt
+   )
+
+
+
+S3method(print,  Mix)
+S3method(plot,   Mix)
+
+S3method(print,  rMix)
+S3method(plot,   rMix)
+
+S3method(print,  datMix)
+
+S3method(print,  hankDet)
+S3method(plot,   hankDet)
+
+S3method(print,  paramEst)
+S3method(plot,   paramEst)
