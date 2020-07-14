@@ -62,9 +62,9 @@ ADAPkde <- function(dat, ndistparams, n, j, init, dist, formals.dist, dist_call,
     
     if(is.null(bs_iter)){ # not in bootstrap loop yet
       
-      txt <- "Sample from kde based on original data"
-      hist(sample, freq = FALSE, breaks = 100, col = "light grey", 
-           main = txt, xlab = "Sample Value")
+      txt <- "Sample from KDE based on original data"
+      hist(sample, freq = FALSE, col = "light grey", main = txt, breaks = 100,
+           xlab = "Sample")
       vals <- seq(min(dat), max(dat), length.out = 100)
       kdevals <- kde(vals)
       lines(vals, kdevals) 
@@ -72,12 +72,11 @@ ADAPkde <- function(dat, ndistparams, n, j, init, dist, formals.dist, dist_call,
     } else if(bs_iter != 0){ 
       # bs_iter equal 0 just recomputes statistic based on original data
       
-      txt <- paste("Sample from bootstrap kde: iteration ", bs_iter, sep = "")
-      hist(sample, freq = FALSE, breaks = 100, col = "light grey", 
-           main = txt, xlab = "Sample Value")
+      txt <- paste("Sample from Bootstrap KDE: Iteration ", bs_iter, sep = "")
+      hist(sample, freq = FALSE, col = "light grey", breaks = 100,
+           main = txt, xlab = "Sample")
       vals <- seq(min(dat), max(dat), length.out = 100)
-      kdevals <- kde(vals)
-      lines(vals, kdevals) 
+      lines(vals, kde(vals)) 
       
     }
   }
@@ -196,13 +195,31 @@ hellinger.cont <- function(obj, bandwidth = 1, j.max = 10, threshold = "SBC",
   .input.checks.functions(obj, bandwidth = bandwidth, j.max = j.max, thrshHel = threshold,
                           sample.n = sample.n, sample.plot = sample.plot,
                           continuous = continuous, Hankel = FALSE, param = TRUE)
-  j0 <- 0
 
   if(is.character(threshold)){ 
     # otherwise it is a function and will be calculated further down
     if(threshold == "AIC") thresh <- (ndistparams + 1)/N
     if(threshold == "SBC") thresh <- ((ndistparams + 1) * log(N))/(2 * N)   
   }
+  
+  if(bandwidth != "adaptive") { # use the standard gaussian Kernel estimate with the supplied bandwidth
+    
+    # compute the kde and draw a sample from it (used to calculate the approximate
+    # hellinger distance)
+    kde <- kdensity(dat, bw = bandwidth, kernel = "gaussian")
+    rkernel <- function(n) rnorm(n, sd = bandwidth)
+    sample <- sample(dat, size = sample.n, replace = TRUE) + rkernel(n = sample.n) 
+    kdevals <- kde(sample)
+    
+    if(sample.plot == TRUE){
+      hist(sample, freq = FALSE, breaks = 100)
+      lines(seq(min(dat), max(dat), length.out = 100), kde(seq(min(dat), max(dat), length.out = 100)))
+    }
+    
+  }
+  
+
+  j0 <- 0
   
   repeat{
 
@@ -231,28 +248,14 @@ hellinger.cont <- function(obj, bandwidth = 1, j.max = 10, threshold = "SBC",
                           sample.n, sample.plot)
       kde <- kde.list$kde
       sample <- kde.list$sample
-      
-    } else { # use the standard gaussian Kernel estimate with the supplied bandwidth
-      
-      # compute the kde and draw a sample from it
-      kde <- kdensity::kdensity(dat, bw = bandwidth, kernel = "gaussian")
-      rkernel <- function(n) rnorm(n, sd = bandwidth)
-      sample <- sample(dat, size = sample.n, replace = TRUE) + rkernel(n = sample.n) 
-      
-      if(sample.plot == TRUE){
-        hist(sample, freq = FALSE, breaks = 100)
-        lines(seq(min(dat), max(dat), length.out = 100), kde(seq(min(dat), max(dat), length.out = 100)))
-      }
-      
+      kdevals <- kde(sample)
     }
-    
-    kdevals <- kde(sample)
     
     # calculate optimal parameters for j0
     if(j0 > 1){ # need to include weight restrictions in optimization
       
       fmin <- .get.fmin.hellinger.c(kde, dat, formals.dist, ndistparams, dist, sample,
-                                   kdevals, dist_call)
+                                    kdevals, dist_call)
       ineq.j0 <- restrictions.j0$ineq
 
       opt <- solnp(initial.j0, fun = fmin, ineqfun = ineq.j0, ineqLB = 0, ineqUB = 1,
@@ -336,6 +339,25 @@ hellinger.boot.cont <- function(obj, bandwidth = 1, j.max = 10, B = 100, ql = 0.
   .input.checks.functions(obj, j.max = j.max,  B = B, ql = ql, qu = qu,
                           continuous = continuous, Hankel = FALSE, param = TRUE)
   
+  if(bandwidth != "adaptive") { # use the standard gaussian Kernel estimate with the supplied bandwidth
+    
+    # compute the kde and draw a sample from it (used to calculate the approximate
+    # hellinger distance)
+    kde <- kdensity(dat, bw = bandwidth, kernel = "gaussian")
+    rkernel <- function(n) rnorm(n, sd = bandwidth)
+    sample <- sample(dat, size = sample.n, replace = TRUE) + rkernel(n = sample.n)
+    kdevals <- kde(sample)
+    
+    if(sample.plot == TRUE){
+      txt <- "Sample from KDE based on original data"
+      hist(sample, freq = FALSE, col = "light grey", main = txt, breaks = 100,
+           xlab = "Sample")
+      lines(seq(min(dat), max(dat), length.out = 100), 
+            kde(seq(min(dat), max(dat), length.out = 100)))
+    }
+    
+  }
+  
   j0 <- 0 
   
   repeat{
@@ -361,22 +383,9 @@ hellinger.boot.cont <- function(obj, bandwidth = 1, j.max = 10, B = 100, ql = 0.
                           sample.n, sample.plot)
       kde <- kde.list$kde
       sample <- kde.list$sample
+      kdevals <- kde(sample)
       
-    } else { # use the standard gaussian Kernel estimate with the supplied bandwidth
-     
-      # compute the kde and draw a sample from it
-      kde <- kdensity::kdensity(dat, bw = bandwidth, kernel = "gaussian")
-      rkernel <- function(n) rnorm(n, sd = bandwidth)
-      sample <- sample(dat, size = sample.n, replace = TRUE) + rkernel(n = sample.n)
-      
-      if(sample.plot == TRUE){
-        hist(sample, freq = FALSE, breaks = 100)
-        lines(seq(min(dat), max(dat), length.out = 100), kde(seq(min(dat), max(dat), length.out = 100)))
-      }
-      
-    }
-    
-    kdevals <- kde(sample)
+    } 
     
     # calculate optimal parameters for j0
     if(j0 > 1){ # need to include weight restrictions in optimization
@@ -475,12 +484,14 @@ hellinger.boot.cont <- function(obj, bandwidth = 1, j.max = 10, B = 100, ql = 0.
       } else { # use the standard gaussian Kernel estimate with the supplied bandwidth
         
         # compute the kde and draw a sample from it
-        kde <- kdensity::kdensity(dat, bw = bandwidth, kernel = "gaussian")
+        kde <- kdensity(dat, bw = bandwidth, kernel = "gaussian")
         rkernel <- function(n) rnorm(n, sd = bandwidth)
         sample <- sample(dat, size = sample.n, replace = TRUE) + rkernel(n = sample.n)
         
-        if(sample.plot == TRUE){
-          hist(sample, freq = FALSE, breaks = 100)
+        if(sample.plot == TRUE && bs_iter != 0){
+          txt <- paste("Sample from Bootstrap KDE: Iteration ", bs_iter, sep = "")
+          hist(sample, freq = FALSE, breaks = 100, col = "light grey", 
+               main = txt, xlab = "Sample")
           lines(seq(min(dat), max(dat), length.out = 100), kde(seq(min(dat), max(dat), length.out = 100)))
         }
 
