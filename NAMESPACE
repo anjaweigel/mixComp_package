@@ -21,6 +21,8 @@ importFrom("matrixcalc", hankel.matrix)
 
 importFrom("Rsolnp", solnp)
 
+importFrom("kdensity", kdensity)
+
 
 
 ### This package exports ---------------------------------
