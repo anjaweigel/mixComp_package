@@ -7,7 +7,7 @@ Authors@R: c(person(given = "Anja", family = "Weigel", role = c("aut", "cre"),
             )
 Maintainer: Anja Weigel <anja.weigel@yahoo.de>
 Author: Anja Weigel [aut, cre]
-Imports: cluster, boot, expm, matrixcalc, Rsolnp
+Imports: cluster, boot, expm, matrixcalc, Rsolnp, kdensity
 License: GPL-3
 Encoding: UTF-8
 LazyData: true
