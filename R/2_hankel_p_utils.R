@@ -152,8 +152,7 @@
   
   # cluster data into j groups
   cluster.vec <- clara(dat, j, rngR = TRUE, pamLike = TRUE, medoids.x = FALSE,
-                       #samples = 20
-                       )$clustering
+                       samples = 20)$clustering
   # initial weights proportional to number of observations in each cluster
   initial <- (mapply(function(i){sum(cluster.vec == i)}, 1:j)/length(cluster.vec))[-j]
   
