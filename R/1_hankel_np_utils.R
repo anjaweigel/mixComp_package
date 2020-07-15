@@ -236,7 +236,7 @@
                                    || !all(c("n", "j") %in% names(formals(thrshL2)))))
     stop("The function 'threshold' needs to have arguments \"n\" and \"j\".")
   else if(!is.function(thrshL2) && thrshL2 == "LIC") 
-    warning("While being used in Umashanger & Sriram's original paper,  asymptotically the threshold 'LIC' does not go to 0 slower than the L2 distance and the estimator is therefore not consistent.",
+    warning("While being used in Umashanger & Sriram's original paper,  asymptotically, the threshold 'LIC' does not go to 0 slower than the difference in squared L2 distances once the correct order p is reached and the estimator is therefore not consistent.",
             call. = FALSE)
   
   if(missing(thrshHel)){} # allowed be missing
@@ -247,7 +247,7 @@
                                     || !all(c("n", "j") %in% names(formals(thrshHel)))))
     stop("The function 'threshold' needs to have arguments \"n\" and \"j\".")
   else if(!is.function(thrshHel) && thrshHel == "AIC") 
-    warning("While being used in Woo & Sriram's original paper, asymptotically the threshold 'AIC' does not go to 0 slower than the L2 distance and the estimator is therefore not consistent.",
+    warning("While being used in Woo & Sriram's original paper, asymptotically, the threshold 'AIC' does not go to 0 slower than the difference in squared Hellinger distances once the correct order p is reached and the estimator is therefore not consistent.",
             call. = FALSE)
 
   if(missing(discrete)){} # allowed be missing
