@@ -183,8 +183,8 @@ ADAPkde <- function(dat, ndistparams, n, j, init, dist, formals.dist, dist_call,
 ##          continuous mixture (as well as the weights and component parameters) returning
 ##          a 'paramEst' object
 
-hellinger.cont <- function(obj, bandwidth = 1, j.max = 10, threshold = "SBC", 
-                           sample.n = 3000, sample.plot = TRUE, control = c(trace = 0)){
+hellinger.cont <- function(obj, bandwidth, j.max = 10, threshold = "SBC", 
+                           sample.n = 5000, sample.plot = TRUE, control = c(trace = 0)){
   
   # get standard variables
   variable_list <- .get.list(obj)
@@ -201,23 +201,6 @@ hellinger.cont <- function(obj, bandwidth = 1, j.max = 10, threshold = "SBC",
     if(threshold == "AIC") thresh <- (ndistparams + 1)/N
     if(threshold == "SBC") thresh <- ((ndistparams + 1) * log(N))/(2 * N)   
   }
-  
-  if(bandwidth != "adaptive") { # use the standard gaussian Kernel estimate with the supplied bandwidth
-    
-    # compute the kde and draw a sample from it (used to calculate the approximate
-    # hellinger distance)
-    kde <- kdensity(dat, bw = bandwidth, kernel = "gaussian")
-    rkernel <- function(n) rnorm(n, sd = bandwidth)
-    sample <- sample(dat, size = sample.n, replace = TRUE) + rkernel(n = sample.n) 
-    kdevals <- kde(sample)
-    
-    if(sample.plot == TRUE){
-      hist(sample, freq = FALSE, breaks = 100)
-      lines(seq(min(dat), max(dat), length.out = 100), kde(seq(min(dat), max(dat), length.out = 100)))
-    }
-    
-  }
-  
 
   j0 <- 0
   
@@ -230,12 +213,21 @@ hellinger.cont <- function(obj, bandwidth = 1, j.max = 10, threshold = "SBC",
       thresh <- threshold(n = N, j = j0)
     }
     
-    initial.j0 <- .get.initialvals(dat, j0, ndistparams, MLE.function, lower, upper, dist,
-                                   formals.dist)
-    restrictions.j0 <- .get.restrictions(j = j0, ndistparams = ndistparams, lower = lower,
-                                         upper = upper)
-    lx.j0 <- restrictions.j0$lx
-    ux.j0 <- restrictions.j0$ux
+    if(j0 != 1){ # pass on constraints for bootstrap
+      
+      ineq.j0 <- ineq.j1
+      lx.j0 <- lx.j1
+      ux.j0 <- ux.j1
+      
+    } else { # need to estimate j0 so need initial values and restrictions
+      
+      initial.j0 <- .get.initialvals(dat, j0, ndistparams, MLE.function, lower, upper, dist,
+                                     formals.dist)
+      restrictions.j0 <- .get.restrictions(j = j0, ndistparams = ndistparams, lower = lower,
+                                           upper = upper)
+      lx.j0 <- restrictions.j0$lx
+      ux.j0 <- restrictions.j0$ux
+    }
     
     if(bandwidth == "adaptive"){ # use the adaptive Kernel density estimate (kde)
       
@@ -243,42 +235,83 @@ hellinger.cont <- function(obj, bandwidth = 1, j.max = 10, threshold = "SBC",
       # just supplying something so the same function (ADAPkde) can be used
       if(j0 == 1) theta.j1 <- initial.j0
       
-      # compute the kde and draw a sample from it
+      # compute the kde and draw a sample from it (used to calculate the approximate
+      # hellinger distance); has to be recomputed for every j0
       kde.list <- ADAPkde(dat, ndistparams, N, j0, theta.j1, dist, formals.dist, dist_call,
                           sample.n, sample.plot)
       kde <- kde.list$kde
       sample <- kde.list$sample
       kdevals <- kde(sample)
-    }
+      
+      # calculate optimal parameters for j0; cannot reuse them with the adaptive kde
+      # since the kde and kdevals will change in every iteration of j0
+      if(j0 > 1){ # need to include weight restrictions in optimization
+        
+        initial.j0 <- .get.initialvals(dat, j0, ndistparams, MLE.function, lower, upper, dist,
+                                       formals.dist)
+        fmin <- .get.fmin.hellinger.c(kde, dat, formals.dist, ndistparams, dist, sample,
+                                      kdevals, dist_call)
+        ineq.j0 <- restrictions.j0$ineq
+        
+        opt <- solnp(initial.j0, fun = fmin, ineqfun = ineq.j0, ineqLB = 0, ineqUB = 1,
+                     LB = lx.j0, UB = ux.j0, control = control)
+        # if we estimate multiple components check that all weights satisfy the constraints
+        theta.j0 <- opt$pars <- .augment.pars(opt$pars, j0)
+        
+      } else { # already know w = 1 (single component mixture)
+        
+        fmin <- .get.fmin.hellinger.c.0(kde, dat, formals.dist, ndistparams, dist, sample,
+                                        kdevals, dist_call)
+        
+        opt <- solnp(initial.j0, fun = fmin, LB = lx.j0, UB = ux.j0, control = control)
+        theta.j0 <- opt$pars
+      }
+      
+      Hellinger.j0 <- opt$values[length(opt$values)] <- .get.hellingerD(theta.j0, j0,  ndistparams, 
+                                                                        formals.dist, kde, dist, opt$values[length(opt$values)])
+      conv.j0 <- opt$convergence
+      values.j0 <- opt$values
+      .printresults(opt, j0, dist, formals.dist, ndistparams)
+ 
+    } else if(j0 != 1) { # if bandwidth != "adaptive"
+      # for the standard kde we can reuse the values calculated for j1 since the kde
+      # does not change with j0
+      
+      theta.j0 <- theta.j1
+      Hellinger.j0 <- Hellinger.j1 
+      conv.j0 <- conv.j1
+      values.j0 <- values.j1
+      
+    } else { # if bandwidth != "adaptive" and j0 == 1
     
-    # calculate optimal parameters for j0
-    if(j0 > 1){ # need to include weight restrictions in optimization
+      # compute the kde and draw a sample from it (used to calculate the approximate
+      # hellinger distance) in the first iteration (i.e. j0 == 1)
+      kde <- kdensity(dat, bw = bandwidth, kernel = "gaussian")
+      rkernel <- function(n) rnorm(n, sd = bandwidth)
+      sample <- sample(dat, size = sample.n, replace = TRUE) + rkernel(n = sample.n) 
+      kdevals <- kde(sample)
       
-      fmin <- .get.fmin.hellinger.c(kde, dat, formals.dist, ndistparams, dist, sample,
-                                    kdevals, dist_call)
-      ineq.j0 <- restrictions.j0$ineq
-
-      opt <- solnp(initial.j0, fun = fmin, ineqfun = ineq.j0, ineqLB = 0, ineqUB = 1,
-                   LB = lx.j0, UB = ux.j0, control = control)
-
+      if(sample.plot == TRUE){
+        hist(sample, freq = FALSE, breaks = 100)
+        lines(seq(min(dat), max(dat), length.out = 100), kde(seq(min(dat), max(dat), length.out = 100)))
+      }
       
-    } else { # already know w = 1 (single component mixture)
+      # calculate optimal parameters for j0 = 1
       
       fmin <- .get.fmin.hellinger.c.0(kde, dat, formals.dist, ndistparams, dist, sample,
                                       kdevals, dist_call)
       
       opt <- solnp(initial.j0, fun = fmin, LB = lx.j0, UB = ux.j0, control = control)
+    
+    
+      theta.j0 <- opt$pars
+      Hellinger.j0 <- opt$values[length(opt$values)] <- .get.hellingerD(theta.j0, j0,  ndistparams, 
+                                                                        formals.dist, kde, dist, opt$values[length(opt$values)])
+      conv.j0 <- opt$convergence
+      values.j0 <- opt$values
+      .printresults(opt, j0, dist, formals.dist, ndistparams)
     }
     
-    # if we estimate multiple components check that all weights satisfy the constraints
-    if(j0 != 1) theta.j0 <- opt$pars <- .augment.pars(opt$pars, j0)
-    else theta.j0 <- opt$pars
-    
-    Hellinger.j0 <- opt$values[length(opt$values)] <- .get.hellingerD(theta.j0, j0,  ndistparams, 
-                                                                      formals.dist, kde, dist, opt$values[length(opt$values)])
-    conv.j0 <- opt$convergence
-    values.j0 <- opt$values
-    .printresults(opt, j0, dist, formals.dist, ndistparams)
     
     # calculate optimal parameters for j1 (always need weight restrictions since j1 
     # starts from 2)
@@ -304,7 +337,6 @@ hellinger.cont <- function(obj, bandwidth = 1, j.max = 10, threshold = "SBC",
     
     .printresults(opt, j1, dist, formals.dist, ndistparams)
     
-    
     if((Hellinger.j0 - Hellinger.j1) < thresh){
       # so that the printed result reflects that the order j.max was actually estimated 
       # rather than just returned as the default
@@ -326,7 +358,7 @@ hellinger.cont <- function(obj, bandwidth = 1, j.max = 10, threshold = "SBC",
 ##          continuous mixture (as well as the weights and component parameters) returning
 ##          a 'paramEst' object (using bootstrap)
 
-hellinger.boot.cont <- function(obj, bandwidth = 1, j.max = 10, B = 100, ql = 0.025,
+hellinger.boot.cont <- function(obj, bandwidth, j.max = 10, B = 100, ql = 0.025,
                                 qu = 0.975, sample.n = 3000, sample.plot = TRUE,
                                 control = c(trace = 0), ...){
 
@@ -339,25 +371,6 @@ hellinger.boot.cont <- function(obj, bandwidth = 1, j.max = 10, B = 100, ql = 0.
   .input.checks.functions(obj, j.max = j.max,  B = B, ql = ql, qu = qu,
                           continuous = continuous, Hankel = FALSE, param = TRUE)
   
-  if(bandwidth != "adaptive") { # use the standard gaussian Kernel estimate with the supplied bandwidth
-    
-    # compute the kde and draw a sample from it (used to calculate the approximate
-    # hellinger distance)
-    kde <- kdensity(dat, bw = bandwidth, kernel = "gaussian")
-    rkernel <- function(n) rnorm(n, sd = bandwidth)
-    sample <- sample(dat, size = sample.n, replace = TRUE) + rkernel(n = sample.n)
-    kdevals <- kde(sample)
-    
-    if(sample.plot == TRUE){
-      txt <- "Sample from KDE based on original data"
-      hist(sample, freq = FALSE, col = "light grey", main = txt, breaks = 100,
-           xlab = "Sample")
-      lines(seq(min(dat), max(dat), length.out = 100), 
-            kde(seq(min(dat), max(dat), length.out = 100)))
-    }
-    
-  }
-  
   j0 <- 0 
   
   repeat{
@@ -365,12 +378,21 @@ hellinger.boot.cont <- function(obj, bandwidth = 1, j.max = 10, B = 100, ql = 0.
     j0 <- j0 + 1 # current complexity estimate
     j1 <- j0 + 1
     
-    initial.j0 <- .get.initialvals(dat, j0, ndistparams, MLE.function, lower, upper, dist,
-                                   formals.dist)
-    restrictions.j0 <- .get.restrictions(j = j0, ndistparams = ndistparams, lower = lower,
-                                         upper = upper)
-    lx.j0 <- restrictions.j0$lx
-    ux.j0 <- restrictions.j0$ux
+    if(j0 != 1){ # pass on constraints for bootstrap
+      
+      ineq.j0 <- ineq.j1
+      lx.j0 <- lx.j1
+      ux.j0 <- ux.j1
+      
+    } else { # need to estimate j0 so need initial values and restrictions
+      
+      initial.j0 <- .get.initialvals(dat, j0, ndistparams, MLE.function, lower, upper, dist,
+                                     formals.dist)
+      restrictions.j0 <- .get.restrictions(j = j0, ndistparams = ndistparams, lower = lower,
+                                           upper = upper)
+      lx.j0 <- restrictions.j0$lx
+      ux.j0 <- restrictions.j0$ux
+    }
     
     if(bandwidth == "adaptive"){ # use the adaptive Kernel density estimate (kde)
       
@@ -378,43 +400,81 @@ hellinger.boot.cont <- function(obj, bandwidth = 1, j.max = 10, B = 100, ql = 0.
       # just supplying something so the same function (ADAPkde) can be used
       if(j0 == 1) theta.j1 <- initial.j0
       
-      # compute the kde and draw a sample from it
+      # compute the kde and draw a sample from it (used to calculate the approximate
+      # hellinger distance); has to be recomputed for every j0
       kde.list <- ADAPkde(dat, ndistparams, N, j0, theta.j1, dist, formals.dist, dist_call,
                           sample.n, sample.plot)
       kde <- kde.list$kde
       sample <- kde.list$sample
       kdevals <- kde(sample)
       
-    } 
-    
-    # calculate optimal parameters for j0
-    if(j0 > 1){ # need to include weight restrictions in optimization
+      # calculate optimal parameters for j0; cannot reuse them with the adaptive kde
+      # since the kde and kdevals will change in every iteration of j0
+      if(j0 > 1){ # need to include weight restrictions in optimization
+        
+        initial.j0 <- .get.initialvals(dat, j0, ndistparams, MLE.function, lower, upper, dist,
+                                       formals.dist)
+        fmin <- .get.fmin.hellinger.c(kde, dat, formals.dist, ndistparams, dist, sample,
+                                      kdevals, dist_call)
+                                      
+        opt <- solnp(initial.j0, fun = fmin, ineqfun = ineq.j0, ineqLB = 0, ineqUB = 1,
+                     LB = lx.j0, UB = ux.j0, control = control)
+        # if we estimate multiple components check that all weights satisfy the constraints
+        theta.j0 <- opt$pars <- .augment.pars(opt$pars, j0)
+        
+      } else { # already know w = 1 (single component mixture)
+        
+        fmin <- .get.fmin.hellinger.c.0(kde, dat, formals.dist, ndistparams, dist, sample,
+                                        kdevals, dist_call)
+        
+        opt <- solnp(initial.j0, fun = fmin, LB = lx.j0, UB = ux.j0, control = control)
+        theta.j0 <- opt$pars
+      }
+
+      Hellinger.j0 <- opt$values[length(opt$values)] <- .get.hellingerD(theta.j0, j0,  ndistparams, 
+                                                                        formals.dist, kde, dist, opt$values[length(opt$values)])
+      conv.j0 <- opt$convergence
+      values.j0 <- opt$values
+      .printresults(opt, j0, dist, formals.dist, ndistparams)
       
-      fmin <- .get.fmin.hellinger.c(kde, dat, formals.dist, ndistparams, dist, sample,
-                                    kdevals, dist_call)
-      ineq.j0 <- restrictions.j0$ineq
+    } else if(j0 != 1) { # if bandwidth != "adaptive"
+      # for the standard kde we can reuse the values calculated for j1 since the kde
+      # does not change with j0
       
-      opt <- solnp(initial.j0, fun = fmin, ineqfun = ineq.j0, ineqLB = 0, ineqUB = 1,
-                   LB = lx.j0, UB = ux.j0, control = control)
+      theta.j0 <- theta.j1
+      Hellinger.j0 <- Hellinger.j1 
+      conv.j0 <- conv.j1
+      values.j0 <- values.j1
       
+    } else { # if bandwidth != "adaptive" and j0 == 1
       
-    } else { # already know w = 1 (single component mixture)
+      # compute the kde and draw a sample from it (used to calculate the approximate
+      # hellinger distance) in the first iteration (i.e. j0 == 1)
+      kde <- kdensity(dat, bw = bandwidth, kernel = "gaussian")
+      rkernel <- function(n) rnorm(n, sd = bandwidth)
+      sample <- sample(dat, size = sample.n, replace = TRUE) + rkernel(n = sample.n) 
+      kdevals <- kde(sample)
+      
+      if(sample.plot == TRUE){
+        hist(sample, freq = FALSE, breaks = 100)
+        lines(seq(min(dat), max(dat), length.out = 100), kde(seq(min(dat), max(dat), length.out = 100)))
+      }
+      
+      # calculate optimal parameters for j0 = 1
       
       fmin <- .get.fmin.hellinger.c.0(kde, dat, formals.dist, ndistparams, dist, sample,
                                       kdevals, dist_call)
       
       opt <- solnp(initial.j0, fun = fmin, LB = lx.j0, UB = ux.j0, control = control)
+      
+      
+      theta.j0 <- opt$pars
+      Hellinger.j0 <- opt$values[length(opt$values)] <- .get.hellingerD(theta.j0, j0,  ndistparams, 
+                                                                        formals.dist, kde, dist, opt$values[length(opt$values)])
+      conv.j0 <- opt$convergence
+      values.j0 <- opt$values
+      .printresults(opt, j0, dist, formals.dist, ndistparams)
     }
-    
-    # if we estimate multiple components check that all weights satisfy the constraints
-    if(j0 != 1) theta.j0 <- opt$pars <- .augment.pars(opt$pars, j0)
-    else theta.j0 <- opt$pars
-    
-    Hellinger.j0 <- opt$values[length(opt$values)] <- .get.hellingerD(theta.j0, j0,  ndistparams, 
-                                                                      formals.dist, kde, dist, opt$values[length(opt$values)])
-    conv.j0 <- opt$convergence
-    values.j0 <- opt$values
-    .printresults(opt, j0, dist, formals.dist, ndistparams)
     
     # calculate optimal parameters for j1 (always need weight restrictions since j1 
     # starts from 2)
@@ -505,17 +565,16 @@ hellinger.boot.cont <- function(obj, bandwidth = 1, j.max = 10, B = 100, ql = 0.
                                       kdevals, dist_call)
         opt <- solnp(initial.j0, fun = fmin, ineqfun = ineq.j0, ineqLB = 0, ineqUB = 1,
                      LB = lx.j0, UB = ux.j0, control = control)
+        # if we estimate multiple components check that all weights satisfy the constraints
+        theta.boot0 <- .augment.pars(opt$pars, j0)
         
       } else { # already know w = 1 (single component mixture)
         
         fmin <- .get.fmin.hellinger.c.0(kde, dat, formals.dist, ndistparams, dist, sample,
                                         kdevals, dist_call)
         opt <- solnp(initial.j0, fun = fmin, LB = lx.j0, UB = ux.j0, control = control)
+        theta.boot0 <- opt$pars
       }
-      
-      # if we estimate multiple components check that all weights satisfy the constraints
-      if(j0 != 1) theta.boot0 <- .augment.pars(opt$pars, j0)
-      else theta.boot0 <- opt$pars
       
       Hellinger.boot0 <- .get.hellingerD(theta.boot0, j0,  ndistparams, formals.dist, kde, dist, opt$values[length(opt$values)])
       
