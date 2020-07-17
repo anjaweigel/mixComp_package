@@ -151,8 +151,7 @@
                              formals.dist, dist_call){
   
   # cluster data into j groups
-  cluster.vec <- clara(dat, j, rngR = TRUE, pamLike = TRUE, medoids.x = FALSE,
-                       samples = 20)$clustering
+  cluster.vec <- clara(dat, j, rngR = TRUE, pamLike = TRUE, medoids.x = FALSE)$clustering
   # initial weights proportional to number of observations in each cluster
   initial <- (mapply(function(i){sum(cluster.vec == i)}, 1:j)/length(cluster.vec))[-j]
   
@@ -161,8 +160,6 @@
     # apply MLE function to each of the clusters
     init.mat <- mapply(function(i){sapply(MLE.function, 
                                           function(fun) fun(dat[cluster.vec == i]))}, 1:j)
-    initial <- c(initial, as.vector(t(init.mat)))
-    
     
   } else {
     
@@ -174,10 +171,18 @@
                                                                 dist_call)}, 1:j)
     init.mat <- mapply(function(i){solnp(init, likelihood0list[[i]], LB = lower, UB = upper, 
                                          control= c(trace = 0))$pars}, 1:j)
-    initial <- c(initial, as.vector(t(init.mat)))
     
   }
   
+  initial.theta <- as.vector(t(init.mat))
+  
+  # don't want starting values on the boarder of the feasible region
+  if(lower == 0) initial.theta[initial.theta == lower] <- 0.05
+  else initial.theta[initial.theta == lower] <- 1.05*initial.theta[initial.theta == lower]
+  if(upper == 0) initial.theta[initial.theta == upper] <- -0.05
+  else initial.theta[initial.theta == upper] <- 0.95*initial.theta[initial.theta == upper]
+  
+  initial <- c(initial, initial.theta)
   initial
 }
 
@@ -364,6 +369,7 @@ paramHankel <- function(obj, j.max = 10, B = 1000, ql = 0.025,  qu = 0.975,
       ineq <- restrictions$ineq
       lx <- restrictions$lx
       ux <- restrictions$ux
+  
       initial <- .get.initialvals(dat, j, ndistparams, MLE.function, lower, upper, 
                                   dist, formals.dist, dist_call)
       
