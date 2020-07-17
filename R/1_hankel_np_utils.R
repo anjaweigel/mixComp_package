@@ -301,7 +301,8 @@
   cov_boot_sqrt <- sqrtm(cov_boot)
   cov_boot_sqrt_inv <- try(solve(cov_boot_sqrt), silent = TRUE)
   if(inherits(cov_boot_sqrt_inv, "try-error")) {
-    stop("The matrix squareroot of the estimated covariance matrix could not be inverted: singular system.")
+    stop("The matrix squareroot of the estimated covariance matrix could not be inverted: singular system.",
+         call. = FALSE)
   }
   Y_boot <- cov_boot_sqrt_inv %*% D_hat  
   
