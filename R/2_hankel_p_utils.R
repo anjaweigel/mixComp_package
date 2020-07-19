@@ -177,10 +177,11 @@
   initial.theta <- as.vector(t(init.mat))
   
   # don't want starting values on the boarder of the feasible region
-  if(lower == 0) initial.theta[initial.theta == lower] <- 0.05
-  else initial.theta[initial.theta == lower] <- 1.05*initial.theta[initial.theta == lower]
-  if(upper == 0) initial.theta[initial.theta == upper] <- -0.05
-  else initial.theta[initial.theta == upper] <- 0.95*initial.theta[initial.theta == upper]
+ 
+  initial.theta[initial.theta == lower] <- 1.05*initial.theta[initial.theta == lower]
+  initial.theta[initial.theta == lower] <- 0.05 # if lower == 0
+  initial.theta[initial.theta == upper] <- 0.95*initial.theta[initial.theta == upper]
+  initial.theta[initial.theta == upper] <- -0.05 # if upper == 0
   
   initial <- c(initial, initial.theta)
   initial
