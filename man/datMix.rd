@@ -2,52 +2,36 @@
 \alias{datMix}
 \alias{is.datMix}
 \alias{print.datMix}
-%- Also NEED an '\alias' for EACH other topic documented here.
+
 \title{
 Create Object for Which to Estimate the Mixture Complexity
 }
+
 \description{
-Function to generate a \code{datMix} object to be passed to other \code{mixcomp} functions estimating the mixture complexity (in some cases along with the mixture parameters).
+Function to generate a \code{datMix} object to be passed to other \code{mixcomp} functions used for estimating the mixture complexity.
 }
+
 \usage{
-datMix(dat, dist, param.bound.list = NULL, MLE.function = NULL, 
+datMix(dat, dist, theta.bound.list = NULL, MLE.function = NULL, 
        Hankel.method = NULL, Hankel.function = NULL)
 
 is.datMix(x)
        
 \method{print}{datMix}(x, \dots)
 }
-%- maybe also 'usage' for other objects documented here.
+
 \arguments{
   \item{dat}{a numeric vector containing the observations from the mixture model.}
 
-  \item{dist}{a character string giving the (abbreviated) name of the component distribution.
-    Adding "d" or "r" to the beginning of the string has to give the name of the
-    density function and the random number generation function corresponding to the
-    component distribution.}
+  \item{dist}{a character string giving the (abbreviated) name of the component distribution, such that the function \code{ddist} evaluates its density function and \code{rdist} generates random numbers. For example, to create a gaussian mixture, \code{dist} has to be specified as \code{norm} instead of \code{normal}, \code{gaussian} etc. for the package to find the functions \code{dnorm} and \code{rnorm}.}
     
-  \item{param.bound.list}{a named list containing the upper and the lower bound for every
-    parameter of the component distribution. The names have to match the argument names of the  
-    density function and the random number generation function exactly. Has to be supplied
-    if methods that estimate the parameter values are to be used.}
-    
-  \item{MLE.function}{function (or list of functions) which takes as input the data and gives 
-    as output the maximum likelihood estimator for the parameter(s) of a one component 
-    mixture (i.e. the standard MLE for the component distribution \code{dist}). Passed to all
-    functions which optimize over the likelihood to get analytical instead of numeric results 
-    for \eqn{j = 1} (\eqn{j} being the current estimate of the model complexity), and used for 
-    parameter initialization in functions estimating distribution parameters (i.e. all but \code{nonparamHankel}). In a list, 
-    the order of the MLE functions has to match the order of the parameters in 
-    \code{param.bound.list}. Numerical optimization is used if this is not supplied.}
-    
-  \item{Hankel.method}{character string in \code{c("natural", "explicit", "translation", 
-    "scale")}. Has to be specified if the \code{datMix} object is to be passed to a function 
-    that calculates the Hankel matrix to determine how to estimate the moments of the 
-    mixing distribution. For further details see below.}
+  \item{theta.bound.list}{a named list specifying the upper and the lower bound for the component parameters. The names of the list elements have to match the names of the formal arguments of the functions \code{ddist} and \code{rdist} exactly. For a gaussian mixture, the list elements would have to be named \code{mean} and \code{sd}, as these are the formal arguments used by \code{rnorm} and \code{dnorm}. Has to be supplied if a method that estimates the component weights and parameters is to be used.}
   
-  \item{Hankel.function}{function (or list of functions) needed for the moment estimation via 
-    \code{Hankel.method}. This normally depends on \code{Hankel.method} as well as 
-    \code{dist}. For further details see below.}
+  \item{MLE.function}{function (or list of functions) which takes as input the data and gives as output the maximum likelihood estimator for the parameter(s) of a one component mixture (i.e. the standard MLE of the component distribution \code{dist}).  If the component distribution has more than one parameter, a list of functions has to be supplied and the order of the MLE functions has to match the order of the component parameters in \code{theta.bound.list} (e.g. for a normal mixture, if the first entry of \code{theta.bound.list} is the bounds of the mean, then then first entry of \code{MLE.function} has to be the MLE of the mean). If this argument is supplied and the \code{datMix} object is handed over to a complexity estimation procedure relying on optimizing over a likelihood function, the \code{MLE.function} attribute will be used for the single component case. In case the objective function is either not a likelihood or corresponds to a mixture with more than 1 component, numerical optimization will be used based on \code{\link{Rsolnp}}'s function \code{solnp}, but \code{MLE.function} will be used to calculate the initial values passed to \code{solnp}. Specifying \code{MLE.function} is optional and if it is not, for example because the MLE solution does not exists in closed form, numerical optimization is used to find the relevant MLE's.}
+
+  \item{Hankel.method}{character string in \code{c("explicit", "translation", "scale")},  specifying the method of estimating the moments of the mixing distribution used to calculate the relevant Hankel matrix. Has to be specified when using \code{nonparamHankel}, \code{paramHankel} or \code{paramHankel.scaled}. For further details see below.}
+  
+  \item{Hankel.function}{function needed for the moment estimation via \code{Hankel.method}. This normally depends on \code{Hankel.method} as well as \code{dist}. For further details see below.}
     
   \item{x}{
     \describe{
@@ -57,71 +41,38 @@ is.datMix(x)
   
   \item{\dots}{further arguments passed to the print method.}
 }
-\details{
 
-If the \code{datMix} object is supposed to be passed to a function that calculates the Hankel matrix 
-(i.e. \code{\link{nonparamHankel}}, \code{\link{paramHankel}} or \code{\link{paramHankel.scaled}}), 
-the arguments \code{Hankel.method} and \code{Hankel.function} have to be specified. The 
-\code{Hankel.method}s that can be used to generate the estimate of the (raw) moments of the mixing
-distribution and the corresponding \code{Hankel.function}s are the following (here the subscript \eqn{j}
-is used (instead of \eqn{p} as in the original paper) to be consistent in the package documentation):
+\details{
+If the \code{datMix} object is supposed to be passed to a function that calculates the Hankel matrix of the moments of the mixing distribution (i.e. \code{\link{nonparamHankel}}, \code{\link{paramHankel}} or \code{\link{paramHankel.scaled}}), the arguments \code{Hankel.method} and \code{Hankel.function} have to be specified. The \code{Hankel.method}s that can be used to generate the estimate of the (raw) moments of the mixing distribution and the corresponding \code{Hankel.function}s are the following, where \eqn{j} specifies an estimate of the number of components:
 
 \describe{
-\item{\code{"natural"}} {see Dacunha-Castelle & Gassiat (1997), page 283 equation (3). For this method, 
-                        the functions \eqn{\psi_j} and \eqn{f_j} have to be supplied as a list to \code{Hankel.function},
-                        with \eqn{\psi_j} as first element and \eqn{f_j} as second element. The function \eqn{\psi_j} contains the 
-                        data vector as first argument and \eqn{j} as second, and gives back the vector
-                        \eqn{\psi_j(X_i), 1 <= i <= n}. \eqn{f_j} contains the average of \eqn{\psi_j(X_i)} as first argument 
-                        and \eqn{j} as second (even if it is unused in the function body). If a single function is given as
-                        input this will be taken as \eqn{\psi_j}, and \eqn{f_j} will be taken to be the identity function.}
+\item{\code{"explicit"}}{For this method, \code{Hankel.function} contains a function with arguments called \code{dat} and \code{j}, explicitly estimating the moments of the mixing distribution from the data and the currently assumed mixture complexity. Note that what Dacunha-Castelle & Gassiat (1997) called the "natural" estimator in their original paper is equivalent to using \code{"explicit"} with \code{Hankel.function} \eqn{f_j((1/n) * sum_i(\psi_j(X_i)))}.}
 
+\item{\code{"translation"}}{This method corresponds to Dacunha-Castelle & Gassiat's (1997) example 3.1. It is applicable if the family of component distributions \eqn{(G_\theta)} is given by \eqn{dG_\theta(x) = dG(x-\theta)}, where \eqn{G} is a known probability distribution whose moments can be given explicitly. \code{Hankel.function} contains a function of \eqn{j} returning the \eqn{j}th (raw) moment of \eqn{G}.}
 
-\item{\code{"explicit"}} {For this method, \code{Hankel.function} contains a function which explicitly estimates the moments of 
-                         the mixing distribution. Note that \code{"natural"} is equivalent to using \code{"explicit"} with
-                         \code{Hankel.function} 
-                         \eqn{f_j((1/n) * sum_i(\psi_j(X_i)))} (i.e. \code{f(mean(psi(dat, j)), j)}).}
-
-
-\item{\code{"translation"}} {see Dacunha-Castelle & Gassiat (1997), page 284 example 3.1. For this method, \code{Hankel.function}
-                            contains the function giving back \eqn{E[Y^j]} (i.e the raw moments of the random variable Y) as a 
-                            function of \code{j}, where Y is defined as in 3.1. (4).}
-
-\item{\code{"scale"}} {see Dacunha-Castelle & Gassiat (1997), page 285 example 3.2. For this method, \code{Hankel.function} contains
-                      the function giving back \eqn{E[Y^j]} (i.e the raw moments of the random variable Y) as a function of 
-                      \code{j}, where Y is defined as in the second equation of 3.2 (\eqn{X_t = \sigma_t * Y_t}).}
+\item{\code{"scale"}}{This method corresponds to Dacunha-Castelle & Gassiat's (1997) example 3.2. It is applicable if the family of component distributions \eqn{(G_\theta)} is given by \eqn{dG_\theta(x) = dG(x\\theta)}, where \eqn{G} is a known probability distribution whose moments can be given explicitly. \code{Hankel.function} contains a function of \eqn{j} returning the \eqn{j}th (raw) moment of \eqn{G}.}
 }
                                                
-If the \code{datMix} object is supposed to be passed to a function that estimates the distribution parameters 
-(i.e. all but \code{\link{nonparamHankel}}), the argument \code{param.bound.list} has to be specified,
-and \code{MLE.function} is used instead of numerical calculation if supplied.
-                                               
+If the \code{datMix} object is supposed to be passed to a function that estimates the component weights and parameters (i.e. all but \code{\link{nonparamHankel}}), the argument \code{theta.bound.list} has to be specified, and \code{MLE.function} will be used in the estimation process if it is supplied (otherwise the MLE is found numerically).
+
+Note that the \code{datMix} function will the random number generator (RNG) state.
 }
+
 \value{
 An object of class \code{datMix} with the following attributes (for further explanations
 see above):
   \item{dist}{}
   \item{discrete}{logical indicating whether the underlying mixture distribution is discrete.}
-  \item{param.bound.list}{}
+  \item{theta.bound.list}{}
   \item{MLE.function}{}
   \item{Hankel.method}{}
   \item{Hankel.function}{}
 }
 
-\references{
-%% ~put references to the literature/web site here ~
-}
-\author{
-%%  ~~who you are~~
-}
-\note{
-%%  ~~further notes~~
-}
-
-%% ~Make other sections like Warning with \section{Warning }{....} ~
-
 \seealso{
 \code{\link{RtoDat}} for the conversion of \code{RMix} to \code{datMix} objects.
 }
+
 \examples{
 ## observations from a (presumed) mixture model
 obs <- faithful$waiting
@@ -158,7 +109,7 @@ mom.std.norm <- function(j){
 
         
 ## generate 'datMix' object
-faithful.dM <- datMix(obs, dist = "norm", param.bound.list = norm.bound.list,
+faithful.dM <- datMix(obs, dist = "norm", theta.bound.list = norm.bound.list,
                       MLE.function = MLE.norm.list, Hankel.method = "translation",
                       Hankel.function = mom.std.norm)
                       
@@ -167,6 +118,5 @@ set.seed(1)
 res <- paramHankel.scaled(faithful.dM)
 plot(res)
 }
-% Add one or more standard keywords, see file 'KEYWORDS' in the
-% R documentation directory.
+
 \keyword{cluster}
