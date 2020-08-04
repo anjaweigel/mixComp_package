@@ -16,5 +16,3 @@ Maintainer: Yulia Kulagina <yulia.kulagina@stat.math.ethz.ch>
 Author: Anja Weigel [aut], Yulia Kulagina [aut, cre], Fadoua Balabdaoui [aut, ths]
 Imports: cluster, boot, expm, matrixcalc, Rsolnp, kdensity
 License: GPL-3
-Encoding: UTF-8
-LazyData: true
