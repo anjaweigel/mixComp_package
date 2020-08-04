@@ -65,7 +65,7 @@ Mix <- function(dist, w = NULL, theta.list = NULL, name = NULL, ...){
       stop("'w' must be a numeric >= 0 with same length as the elements of theta.list 
            (or the inputs to ...)")
     s <- sum(w)
-    if(abs(s-1) > 10*.Machine$double.eps) w <- w/s
+    if(abs(s - 1) > .Machine$double.eps) w <- w/s
     
   }
   
@@ -208,21 +208,16 @@ print.Mix <- function(x, ...){
   obj <- x
   if(!is.Mix(obj)) stop("obj is not a 'Mix' object!")
   
-  oobj <- obj
-  
-  has.nam <- !is.null(nam <- attr(obj, "name"))
   cat(paste("'", attr(obj, "dist"), sep = ""), "Mixture' object",
-      if(has.nam) paste("\t ``", nam, "''", sep=''), "\n")
+      paste("\t ``", attr(obj, "name"), "''", sep=''), "\n")
   
   att <- attributes(obj); 
-  att <- att[names(att) != "dist" & names(att) != "theta.list" & names(att) != "discrete"]
+  att <- att[names(att) != "dist" & names(att) != "theta.list" & names(att) != "discrete" & names(att) != "name"]
   attributes(obj) <- if(length(att) > 0) att
-  
-  if(has.nam) attr(obj, "name") <- NULL
-  cl <- class(obj);  cl <- cl[ cl != c("Mix")] #- the remaining classes
-  class(obj) <- if(length(obj) > 0) cl ## else NULL
+
+  class(obj) <- character(0)
   print(obj, ...)
-  invisible(oobj)
+  invisible(x)
   
 }
 
@@ -232,8 +227,8 @@ print.Mix <- function(x, ...){
 plot.Mix <- function(x, ylim, xlim = NULL, xout = NULL, n = 511, type = NULL, 
                      xlab = "x", ylab = "f(x)", main = attr(obj, "name"), lwd = 1.4,
                      log = FALSE, components = TRUE, h0 = FALSE,
-                     parComp = list(col= NULL, lty = 3, lwd = 1),
-                     parH0 = list(col= NULL, lty = 3, lwd = 1), ...){
+                     parComp = list(col = NULL, lty = 3, lwd = 1),
+                     parH0 = list(col = NULL, lty = 3, lwd = 1), ...){
 
   obj <- x
   if(!is.numeric(n)) stop("'n' has to be an integer!")
@@ -294,7 +289,7 @@ plot.Mix <- function(x, ylim, xlim = NULL, xout = NULL, n = 511, type = NULL,
   
   if(components == TRUE) { # plot individual components
     
-    w <- obj[,"w"]
+    w <- obj[ ,"w"]
     p <- length(w) 
     dist_call <- get(paste("d", attr(obj, "dist"), sep = ""))
     theta.list <- attr(obj, "theta.list")
