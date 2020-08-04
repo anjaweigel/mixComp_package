@@ -12,7 +12,7 @@ mix.lrt <- function(obj, j.max = 10, B = 100, quantile = 0.95, control = c(trace
   
   # get standard variables
   variable_list <- .get.list(obj)
-  list2env(variable_list, env = environment())
+  list2env(variable_list, envir = environment())
   
   
   likelihood0 <- .get.negloglik.dist.0(dat, dist, formals.dist, ndistparams, dist_call)

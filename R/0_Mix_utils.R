@@ -1,3 +1,10 @@
+# Purpose: variable that are defined globally within this package
+
+globalVariables(c("dist", "theta.bound.list", "formals.dist", "ndistparams", "dist_call",
+                  "bounds", "lower", "upper",
+                  "dat", "N", "n.max", "discrete", "continuous",
+                  "Hankel.method", "Hankel.function", "MLE.function"))
+
 
 # Purpose: Gives colors for plots
 
@@ -22,7 +29,6 @@ Mix <- function(dist, w = NULL, theta.list = NULL, name = NULL, ...){
   
   if(!is.character(dist)) stop("'dist' needs to be a character string specfying the 
                                distribution of the mixture components!")
-  browser
   if(!is.null(theta.list))
     if(!is.list(theta.list))
       stop("Input to theta.list has to be of class 'list'!")
@@ -38,11 +44,11 @@ Mix <- function(dist, w = NULL, theta.list = NULL, name = NULL, ...){
   
   # check if the vectors of component parameters (e.g. mean and sd for normal distribution)
   # are of equal length
-  equal.length.check <- function(x){
+  equal.length <- function(x){
     len <- sapply(x, length)
-    diff(range(len)) < .Machine$double.eps^0.5
+    diff(range(len)) < .Machine$double.eps
   }
-  if(!equal.length.check(theta.list)) 
+  if(!equal.length(theta.list)) 
     stop("The elements of theta.list (or the inputs to ...) must be of equal length!")
   
   if(!is.numeric(unlist(theta.list)))
@@ -383,7 +389,7 @@ plot.rMix <- function(x, xlab = attr(obj, "name"), ylim = NULL,
     return(plt.inv)
   } else {
     hist(obj, col = col, breaks = breaks, main = main, xlab = xlab, freq = freq, 
-         ylim = ylim, plot = plot, ...)
+         ylim = ylim, plot = plot, right = FALSE, ...)
     # invisible plot to reuse breaks later for components
     plt.inv <- suppressWarnings(hist(obj, breaks = breaks, plot = FALSE, ...))
   }

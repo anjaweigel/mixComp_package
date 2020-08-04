@@ -103,7 +103,7 @@ L2.disc <- function(obj, j.max = 10, n.inf = 1000, threshold = "SBC", control = 
  
   # get standard variables
   variable_list <- .get.list(obj)
-  list2env(variable_list, env = environment())
+  list2env(variable_list, envir = environment())
 
   # check relevant inputs
   .input.checks.functions(obj, thrshL2 = threshold, j.max = j.max, n.inf = n.inf, 
@@ -200,7 +200,7 @@ L2.boot.disc <- function(obj, j.max = 10, n.inf = 1000, B = 100, ql = 0.025, qu 
   
   # get standard variables
   variable_list <- .get.list(obj)
-  list2env(variable_list, env = environment())
+  list2env(variable_list, envir = environment())
   
   # check relevant inputs
   .input.checks.functions(obj, j.max = j.max, B = B, n.inf = n.inf, ql = ql, qu = qu,
@@ -449,7 +449,7 @@ hellinger.disc <- function(obj, j.max = 10, threshold = "SBC", control = c(trace
   
   # get standard variables
   variable_list <- .get.list(obj)
-  list2env(variable_list, env = environment())
+  list2env(variable_list, envir = environment())
   
   # check relevant inputs
   .input.checks.functions(obj, j.max = j.max, thrshHel = threshold,
@@ -550,7 +550,7 @@ hellinger.boot.disc <- function(obj, j.max = 10, B = 100, ql = 0.025, qu = 0.975
   
   # get standard variables
   variable_list <- .get.list(obj)
-  list2env(variable_list, env = environment())
+  list2env(variable_list, envir = environment())
   
   # check relevant inputs
   .input.checks.functions(obj, j.max = j.max, B = B, ql = ql, qu = qu,

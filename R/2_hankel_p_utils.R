@@ -165,7 +165,7 @@
     
     # use numerical optimization to find the MLE for each of the clusters
     init <- .get.initialvals.init(j = 1, ndistparams = ndistparams, lower = lower,
-                                  upper = upper, dist_call)
+                                  upper = upper)
     likelihood0list <- mapply(function(i){.get.negloglik.dist.0(dat[cluster.vec == i], 
                                                                 dist, formals.dist, ndistparams, 
                                                                 dist_call)}, 1:j)
@@ -313,7 +313,6 @@
     ndistparams = ndistparams,
     dist_call = dist_call,
     
-    
     bounds = bounds,
     lower = bounds[1:ndistparams],
     upper = bounds[(ndistparams + 1):(2*ndistparams)],
@@ -344,7 +343,7 @@ paramHankel <- function(obj, j.max = 10, B = 1000, ql = 0.025,  qu = 0.975,
   
   # get standard variables
   variable_list <- .get.list(obj)
-  list2env(variable_list, env = environment())
+  list2env(variable_list, envir = environment())
   
   fun <- .moments.map(Hankel.method = Hankel.method)
   likelihood <- .get.negloglik.dist(dat, dist, formals.dist, ndistparams, dist_call)
@@ -442,7 +441,7 @@ paramHankel.scaled <- function(obj, j.max = 10, B = 100, ql = 0.025, qu = 0.975,
   
   # get standard variables
   variable_list <- .get.list(obj)
-  list2env(variable_list, env = environment())
+  list2env(variable_list, envir = environment())
 
   fun <- .moments.map(Hankel.method = Hankel.method)
   likelihood <- .get.negloglik.dist(dat, dist, formals.dist, ndistparams, dist_call)
@@ -577,7 +576,7 @@ plot.paramEst <- function(x, mixture = TRUE, components = TRUE, ylim = NULL, cex
   } 
   
   if(is.null(ylim) || anyNA(ylim)){ # construct reasonable ordinate values
-    plt.inv <- suppressWarnings(plot(dat, plot = FALSE))
+    plt.inv <- suppressWarnings(plot(dat, plot = FALSE, right = FALSE))
     mx <- max(plt.inv$density, y)
     ylim <- c(0, mx)
   }
@@ -610,7 +609,7 @@ plot.paramEst <- function(x, mixture = TRUE, components = TRUE, ylim = NULL, cex
 
 # Purpose: print method for 'paramEst' objects
 
-print.paramEst <- function(x){
+print.paramEst <- function(x, ...){
   
   obj <- x
   j <- as.numeric(obj)
@@ -636,7 +635,7 @@ print.paramEst <- function(x){
               "\nFunction value: ",
               format(funv, digits = 4, scientific = 5, nsmall = 4, zero.print = TRUE),
               "\n", "\n", sep = ""))
-    printCoefmat(cmat)
+    printCoefmat(cmat, ...)
     cat("Optimization via user entered MLE-function.\n", strrep("-", 70), sep = "")
     
   } else { # parameters estimated numerically
@@ -663,7 +662,7 @@ print.paramEst <- function(x){
               "\nFunction value: ",
               format(funv, digits = 4, scientific = 5, nsmall = 4, zero.print = TRUE),
               "\n", "\n", sep = ""))
-    printCoefmat(cmat)
+    printCoefmat(cmat, ...)
     
     if(conv == TRUE){
       cat(paste( "Converged in ", niter, " iterations.\n", sep = ""))

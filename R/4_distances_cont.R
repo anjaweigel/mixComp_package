@@ -188,7 +188,7 @@ hellinger.cont <- function(obj, bandwidth, j.max = 10, threshold = "SBC",
   
   # get standard variables
   variable_list <- .get.list(obj)
-  list2env(variable_list, env = environment())
+  list2env(variable_list, envir = environment())
   continuous <- !discrete
   
   # check relevant inputs
@@ -364,7 +364,7 @@ hellinger.boot.cont <- function(obj, bandwidth, j.max = 10, B = 100, ql = 0.025,
 
   # get standard variables
   variable_list <- .get.list(obj)
-  list2env(variable_list, env = environment())
+  list2env(variable_list, envir = environment())
   continuous <- !discrete
   
   # check relevant inputs

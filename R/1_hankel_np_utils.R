@@ -353,7 +353,7 @@ nonparamHankel <- function(obj, j.max = 10, pen.function = NULL, scaled = FALSE,
 
 ## Purpose: print method for "hankDet" objects
 
-print.hankDet <- function(x){
+print.hankDet <- function(x, ...){
   
   obj <- x
   scaled <- attr(obj, "scaled")
@@ -378,7 +378,7 @@ print.hankDet <- function(x){
   cmat <- matrix(c(1:length(obj), obj), nrow = length(obj), ncol = 2)
   colnames(cmat) <- c("Number of components", "Determinant")
   rownames(cmat) <- rep("", length(obj))
-  print(cmat)
+  print(cmat, ...)
   
 }
 
