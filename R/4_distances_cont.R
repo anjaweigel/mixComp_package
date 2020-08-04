@@ -398,11 +398,11 @@ hellinger.boot.cont <- function(obj, bandwidth, j.max = 10, B = 100, ql = 0.025,
       
       # will not really be used in the computation of the adaptive kde anyways (for j0 == 1);
       # just supplying something so the same function (ADAPkde) can be used
-      if(j0 == 1) theta.j1 <- initial.j0
+      if(j0 == 1) theta.adap <- initial.j0
       
       # compute the kde and draw a sample from it (used to calculate the approximate
       # hellinger distance); has to be recomputed for every j0
-      kde.list <- ADAPkde(dat, ndistparams, N, j0, theta.j1, dist, formals.dist, dist_call,
+      kde.list <- ADAPkde(dat, ndistparams, N, j0, theta.adap, dist, formals.dist, dist_call,
                           sample.n, sample.plot)
       kde <- kde.list$kde
       sample <- kde.list$sample
@@ -437,7 +437,7 @@ hellinger.boot.cont <- function(obj, bandwidth, j.max = 10, B = 100, ql = 0.025,
       values.j0 <- opt$values
       .printresults(opt, j0, dist, formals.dist, ndistparams)
       
-    } else if(j0 != 1) { # if bandwidth != "adaptive"
+    } else if(j0 != 1) { # and if bandwidth != "adaptive"
       # for the standard kde we can reuse the values calculated for j1 since the kde
       # does not change with j0
       
@@ -536,7 +536,7 @@ hellinger.boot.cont <- function(obj, bandwidth, j.max = 10, B = 100, ql = 0.025,
       if(bandwidth == "adaptive"){ # use the adaptive Kernel density estimate (kde)
         
         # compute the kde and draw a sample from it
-        kde.list <- ADAPkde(dat, ndistparams, N, j0, theta.j1, dist, formals.dist, dist_call,
+        kde.list <- ADAPkde(dat, ndistparams, N, j0, theta.adap, dist, formals.dist, dist_call,
                             sample.n, sample.plot, bs_iter)
         kde <- kde.list$kde
         sample <- kde.list$sample
@@ -603,6 +603,8 @@ hellinger.boot.cont <- function(obj, bandwidth, j.max = 10, B = 100, ql = 0.025,
     
     q_lower <- quantile(diff.boot, probs = ql)
     q_upper <- quantile(diff.boot, probs = qu)
+    
+    theta.adap <- theta.j1 # adaptive KDE is based on previous theta.j1 estimate
     
     if(diff.0 >= q_lower && diff.0 <= q_upper){
       # so that the printed result reflects that the order j.max was actually estimated 
