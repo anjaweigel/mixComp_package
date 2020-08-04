@@ -63,6 +63,7 @@ plot method for \code{rMix} objects, plotting the histogram of the random sample
 normLocMix <- Mix("norm", w = c(0.3, 0.4, 0.3), mean = c(10, 13, 17), sd = c(1, 1, 1))
 
 # generate n random samples
+set.seed(1)
 x <- rMix(1000, normLocMix)
 plot(x)
 }

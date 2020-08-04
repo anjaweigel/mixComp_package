@@ -95,7 +95,7 @@ poisMix <- Mix("pois", w = c(0.45, 0.45, 0.1), lambda = c(1, 5, 10))
 
 ## create random data based on 'Mix' object (gives back 'rMix' object)
 set.seed(1)
-poisRMix <- rMix(1000, obj = poisMix)
+poisRMix <- rMix(10000, obj = poisMix)
 
 
 ## create 'datMix' object for estimation
@@ -117,10 +117,6 @@ pois.dM <- RtoDat(poisRMix, theta.bound.list = poisList, MLE.function = MLE.pois
 ## complexity and parameter estimation 
 set.seed(1)
 res <- L2.disc(pois.dM)
-plot(res)
-
-set.seed(1)
-res <- L2.boot.disc(pois.dM, B = 30)
 plot(res)
 }
 

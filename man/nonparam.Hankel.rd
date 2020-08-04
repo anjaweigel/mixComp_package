@@ -90,16 +90,11 @@ geomRMix <- rMix(1000, obj = geomMix)
 
 ## create 'datMix' object for estimation
 
-# explicit function giving the estimate for the p^th moment of the 
+# explicit function giving the estimate for the j^th moment of the 
 # mixing distribution, needed for Hankel.method "explicit"
 
 explicit.fct.geom <- function(dat, j){
-  n <- length(dat)
-  res <- numeric(j)
-  for(l in 0:(j-1)){
-    res[l+1] <- sum(ifelse(dat == l, 1, 0))
-  }
-  return(1 - sum(res/n))
+  1 - ecdf(dat)(j - 1)
 }
         
 ## generating 'datMix' object

@@ -128,7 +128,6 @@ explicit.pois <- function(dat, j){
   for (i in 0:(j-1)){
     res <- res*(dat-i)
   }
-  res
   return(mean(res))
 }
         

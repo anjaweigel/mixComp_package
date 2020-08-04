@@ -91,22 +91,20 @@ norm.bound.list$sd <- c(0, Inf)
 
 # for "mean"
 MLE.norm.mean <- function(dat) mean(dat)
-# for "sd" (not using the sd function as it uses (n-1) as denominator)
+# for "sd" (the sd function uses (n-1) as denominator)
 MLE.norm.sd <- function(dat){
-n <- length(dat)
-var_hat <- (1/n)*sum((dat-mean(dat))^2)
-sqrt(var_hat)
-} 
+sqrt((length(dat) - 1) / length(dat)) * sd(dat)
+}
 # combining the functions to a list
 MLE.norm.list <- list("MLE.norm.mean" = MLE.norm.mean,
                       "MLE.norm.sd" = MLE.norm.sd)
 
+## generating 'datMix' object
 normLoc.dM <- RtoDat(normLocRMix, theta.bound.list = norm.bound.list,
                      MLE.function = MLE.norm.list)
                 
                       
-### using 'datMix' object to estimate the mixture
-
+### complexity and parameter estimation 
 set.seed(0)
 res <- mix.lrt(normLoc.dM, B = 30)
 plot(res)

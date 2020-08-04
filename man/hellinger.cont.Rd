@@ -103,38 +103,42 @@ Mixture Models." Journal of the American Statistical Association, Vol. 91, No. 4
 }
 
 \examples{
-## create 'Mix' object
-poisMix <- Mix("pois", w = c(0.45, 0.45, 0.1), lambda = c(1, 5, 10))
+### generating 'Mix' object
+normLocMix <- Mix("norm", w = c(0.3, 0.4, 0.3), mean = c(10, 13, 17), sd = c(1, 1, 1))
 
+### generating 'rMix' from 'Mix' object (with 1000 observations)
+set.seed(1)
+normLocRMix <- rMix(10000, normLocMix)
 
-## create random data based on 'Mix' object (gives back 'rMix' object)
-set.seed(0)
-poisRMix <- rMix(1000, obj = poisMix)
+### generating 'datMix' from 'R' object
 
+## generate list of parameter bounds
 
-## create 'datMix' object for estimation
+norm.bound.list <- vector(mode = "list", length = 2)
+names(norm.bound.list) <- c("mean", "sd")
+norm.bound.list$mean <- c(-Inf, Inf)
+norm.bound.list$sd <- c(0, Inf)
 
-# generate list of parameter bounds
-poisList <- vector(mode = "list", length = 1)
-names(poisList) <- "lambda"
-poisList$lambda <- c(0, Inf)
+## generate MLE functions
 
-# generate MLE function
-MLE.pois <- function(dat){
-  mean(dat)
+# for "mean"
+MLE.norm.mean <- function(dat) mean(dat)
+# for "sd" (the sd function uses (n-1) as denominator)
+MLE.norm.sd <- function(dat){
+sqrt((length(dat) - 1) / length(dat)) * sd(dat)
 }
+# combining the functions to a list
+MLE.norm.list <- list("MLE.norm.mean" = MLE.norm.mean,
+                      "MLE.norm.sd" = MLE.norm.sd)
 
-# generating 'datMix' object
-pois.dM <- RtoDat(poisRMix, theta.bound.list = poisList, MLE.function = MLE.pois)
+## generating 'datMix' object
+normLoc.dM <- RtoDat(normLocRMix, theta.bound.list = norm.bound.list,
+                     MLE.function = MLE.norm.list)
 
 
-## complexity and parameter estimation 
+### complexity and parameter estimation 
 set.seed(0)
-res <- hellinger.disc(pois.dM)
-plot(res)
-
-set.seed(0)
-res <- hellinger.boot.disc(pois.dM, B = 30)
+res <- hellinger.cont(normLoc.dM, bandwidth = 0.5, sample.n = 5000)
 plot(res)
 }
 
