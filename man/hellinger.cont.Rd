@@ -7,7 +7,7 @@ Estimate a Continuous Mixture's Complexity Based on Hellinger Distance
 }
 
 \description{
-Estimation of a continuous mixture's complexity as well as its component weights and parameters by minimizing the squared hellinger distance to a kernel density estimate. 
+Estimation of a continuous mixture's complexity as well as its component weights and parameters by minimizing the squared Hellinger distance to a kernel density estimate. 
 }
 
 \usage{
@@ -80,7 +80,7 @@ Object of class \code{paramEst} with the following attributes
 
 \item{mle.fct}{attribute \code{MLE.function} of \code{obj}.}
 
-\item{pars}{Say the complexity estimate is equal to some \eqn{j}. Then \code{pars} is a numeric vector of size \eqn{(d+1)*j-1} specfiying the component weight and parameter estimates, given as 
+\item{pars}{Say the complexity estimate is equal to some \eqn{j}. Then \code{pars} is a numeric vector of size \eqn{(d+1)*j-1} specifying the component weight and parameter estimates, given as 
 
 \eqn{(w_1, ... w_{j-1}, \theta 1_1, ... \theta 1_j, \theta 2_1, ... \theta d_j)}.}
 

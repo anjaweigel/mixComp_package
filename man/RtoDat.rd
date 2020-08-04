@@ -75,7 +75,7 @@ MLE.norm.list <- list("MLE.norm.mean" = MLE.norm.mean,
 ## (assuming gaussian components with variance 1)
 
 mom.std.norm <- function(j){
-  ifelse(j %% 2 == 0, prod(seq(1, j - 1, by = 2)), 0)
+  ifelse(j \%\% 2 == 0, prod(seq(1, j - 1, by = 2)), 0)
 }
 
 

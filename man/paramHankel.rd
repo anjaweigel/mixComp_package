@@ -51,7 +51,7 @@ paramHankel.scaled(obj, j.max = 10, B = 100, ql = 0.025,
     \describe{
       \item{in \code{paramHankel()} and \code{paramHankel.scaled()}:}{further arguments passed to the \code{\link[boot]{boot}} function.}
       \item{in \code{plot.hankDet()}:}{further arguments passed to the \code{\link[graphics]{hist}} function plotting the data.}
-            \item{in \code{print.hankDet()}:}{further arguments passed to the \code{\link[stats]{print.coefmat}} function.}
+            \item{in \code{print.hankDet()}:}{further arguments passed to the \code{\link[stats]{printCoefmat}} function.}
     }}
 }
 
