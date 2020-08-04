@@ -8,7 +8,8 @@ Authors@R: c(person(given = "Anja", family = "Weigel", role = c("aut"),
                     email = "yulia.kulagina@stat.math.ethz.ch"),
              person(given = "Fadoua", family = "Balabdaoui", role = c("aut", "ths"),  
                     email = "fadoua.balabdaoui@stat.math.ethz.ch"),   
-             person(given = "Lilian", family = "Mueller", role = c("ctb")),   
+             person(given = "Lilian", family = "Mueller", role = c("ctb"),
+                    email = "lilian.mueller@gmail.com"),   
              person(given = "Martin", family = "Maechler", role = c("ctb"),  
                     email = "maechler@stat.math.ethz.ch")      
             )
