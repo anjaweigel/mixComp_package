@@ -1,4 +1,4 @@
-\documentclass[article]{nojss}
+\documentclass[nojss]{jss}
 
 %% -- LaTeX packages and custom commands ---------------------------------------
 %%\VignetteIndexEntry{Introduction to finite mixture models and mixComp}
