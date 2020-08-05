@@ -1,7 +1,0 @@
-\documentclass{article}
-\usepackage{pdfpages}
-%\VignetteIndexEntry{mixComp}
-
-\begin{document}
-\includepdf[pages=-, fitpaper=true]{mixcompvignette.pdf}
-\end{document}
