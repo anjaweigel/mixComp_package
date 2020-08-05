@@ -1,0 +1,950 @@
+\documentclass[article]{nojss}
+
+%% -- LaTeX packages and custom commands ---------------------------------------
+%%\VignetteIndexEntry{Introduction to finite mixture models and mixComp}
+
+
+%% recommended packages
+\usepackage{thumbpdf,lmodern}
+\usepackage{amsmath, amssymb, graphicx, mathtools, bm, bbm}
+\usepackage{caption}
+\usepackage{threeparttable}
+\usepackage{tabularx, booktabs}
+\usepackage{graphicx, subfig} 
+
+
+
+%% new custom commands
+\newcommand{\argmin}{\mathop{\mbox{argmin}}}
+\newcommand{\argmax}{\mathop{\mbox{argmax}}}
+\newcommand{\benum}{\begin{enumerate}}
+\newcommand{\eenum}{\end{enumerate}}
+
+%% For Sweave-based articles about R packages:
+%% need no \usepackage{Sweave}
+\SweaveOpts{engine = R, eps = FALSE, keep.source = TRUE}
+<<preliminaries, echo=FALSE, results=hide>>=
+options(prompt = "R> ", continue = "+  ", width = 70, useFancyQuotes = FALSE)
+library("mixComp")
+@
+
+
+%% -- Article metainformation (author, title, ...) -----------------------------
+
+%% - \author{} with primary affiliation
+%% - \Plainauthor{} without affiliations
+%% - Separate authors by \And or \AND (in \author) or by comma (in \Plainauthor).
+%% - \AND starts a new line, \And does not.
+\author{Anja Weigel\\ETH Zurich
+   \And Yulia Kulagina\\ETH Zurich
+   \And Fadoua Balabdaoui\\ETH Zurich}
+\Plainauthor{Anja Weigel, Yulia Kulagina, Fadoua Balabdaoui}
+
+%% - \title{} in title case
+%% - \Plaintitle{} without LaTeX markup (if any)
+%% - \Shorttitle{} with LaTeX markup (if any), used as running title
+\title{Estimating the Complexity of a Finite Mixture with the \proglang{R} Package \pkg{mixComp}}
+\Plaintitle{Estimating the Complexity of a Finite Mixture with the R Package mixComp}
+\Shorttitle{Estimating the Complexity of a Finite Mixture with \pkg{mixComp}}
+
+%% - \Abstract{} almost as usual
+\Abstract{
+  The \pkg{mixComp} package for \proglang{R} provides various methods of estimating the complexity of a finite mixture. While not the primary goal of the package, most methods simultaneously estimate the component weights and parameters. In this document, we give a brief overview of the methodology, and demonstrate the package's functionality in both real world examples and synthetically generated data. Moreover, we show how the package can be used on virtually any parametric mixture as long as functions generating random variates and evaluating the density are provided for the component distribution.
+}
+
+%% - \Keywords{} with LaTeX markup, at least one required
+%% - \Plainkeywords{} without LaTeX markup (if necessary)
+%% - Should be comma-separated and in sentence case.
+\Keywords{JSS, \proglang{R}, finite mixture models, model-based clustering}
+\Plainkeywords{JSS, R, finite mixture models, model-based clustering}
+
+%% - \Address{} of at least one author
+%% - May contain multiple affiliations for each author
+%%   (in extra lines, separated by \emph{and}\\).
+%% - May contain multiple authors for the same affiliation
+%%   (in the same first line, separated by comma).
+\Address{
+  Anja Weigel\\
+  Angerfeldstrasse 15a\\
+  82205 Gilching\\
+  E-mail: \email{anja.weigel@yahoo.de}\\
+  
+  Yulia Kulagina\\
+  Seminar for Statistics, HG G 18\\
+  ETH Zurich\\
+  8092 Zurich, Switzerland\\
+  E-mail: \email{yulia.kulagina@stat.math.ethz.ch}\\
+    
+  Fadoua Balabdaoui\\
+  Seminar for Statistics, HG G 12\\
+  ETH Zurich\\
+  8092 Zurich, Switzerland\\
+  E-mail: \email{fadoua.balabdaoui@stat.math.ethz.ch}\\
+  URL: \url{https://stat.ethz.ch/~fadouab/}
+}
+
+\begin{document}
+
+
+%% -- Introduction -------------------------------------------------------------
+
+%% - In principle "as usual".
+%% - But should typically have some discussion of both _software_ and _methods_.
+%% - Use \proglang{}, \pkg{}, and \code{} markup throughout the manuscript.
+%% - If such markup is in (sub)section titles, a plain text version has to be
+%%   added as well.
+%% - All software mentioned should be properly \cite-d.
+%% - All abbreviations should be introduced.
+%% - Unless the expansions of abbreviations are proper names (like "Journal
+%%   of Statistical Software" above) they should be in sentence case (like
+%%   "generalized linear models" below).
+
+\section[Introduction to finite mixture models and mixComp]{Introduction to finite mixture models and \pkg{mixComp}} \label{sec:intro}
+
+Mixture models have been used extensively whenever data is assumed to have been sampled from a population consisting of several homogeneous subpopulations, called components within this framework. Depending on the application, the amount of a priori information on the mixture may vary substantially. Above all, one differentiates between \textit{parametric} and \textit{nonparametric} models. This distinction separates models where the family of distributions to which the components belong is known to be some parametric family (or where the practitioner wants to suppose this to be the case) from those where no such parametric assumptions are imposed. A second distinction can be made to distinguish models with a known number of components from those where this information has to be estimated from the data. To refer to this number, the terms \textit{order}, \textit{complexity} and \textit{number of components} will be used interchangeably. If the number of components in a finite mixture model is known, an EM algorithm can be used to find the MLE of all unknown parameters. However, in many applications there is no possibility of knowing the complexity a priori and the objective becomes to estimate the number of components or to find the most parsimonious mixture (i.e. the one with the fewest possible components) which still provides a satisfactory fit to the data. These are the kind of tasks the \pkg{mixComp} package was developed to deal with in the realm of parametric finite mixtures.
+
+
+Stated formally, a distribution $F$ is called a \textit{finite mixture} if its density \footnote{We write density throughout and keep in mind that it may be taken with respect to the Lebesgue or the counting measure.} is of the form
+
+	$$f(x) = \sum_{i=1}^p w_i g_i(x),$$
+
+where $p \in \mathbb{N}$ is the mixture complexity, $(w_1, \dots w_p : \sum_{i=1}^p w_i = 1$, $w_i \geq 0,$ for $i=1,\dots,p)$ are the component weights and the density $g_i(x)$ is the $i$th component of the mixture. As the scope of \pkg{mixComp} is limited to \textit{parametric} mixtures, we replace $g_i(x)$ by a parametric density $g(x; \theta_i)$ indexed by the (possibly multivariate, say $d$-dimensional) parameter $\theta_i$ in the parameter space $\Theta \subseteq \mathbb{R}^d$.
+
+Given some complexity $j$, the two relevant parameter spaces can therefore be defined as
+$$\Theta_j = \{\theta_1 \dots \theta_j: \theta_i \in \Theta \subseteq \mathbb{R}^d, \text{ for } i = 1,\dots,j\}$$
+and
+$$W_j = \{w_1, \dots, w_j: \sum_{i=1}^j w_i = 1, w_i \geq 0, \text{ for } i = 1,\dots,j\}.$$
+
+
+Throughout this paper, it is assumed that the family of the component densities \linebreak $\{g(x; \theta):\theta \in \Theta\}$ is known, but the component parameters \mbox{\boldmath$\theta$} $ = (\theta_1, \dots, \theta_p) \in \Theta_p$, the component weights $\textbf{w} = (w_1, \dots, w_p) \in W_p$ and the mixture complexity $p \in \mathbb{N}$ are unknown, with $p$ being the parameter of interest. Assume now that $F$ is a finite mixture distribution with density $f(x) = \sum_{i=1}^p w_i g(x; \theta_i)$ and $\textbf{X} = \{X_1, \dots, X_n\}$ is an i.i.d. sample of size $n$ from $F$. The \pkg{mixComp} package aims to estimate the smallest such $p$ on the basis of $\textbf{X}$, either on its own or by simultaneously estimating the weights $w_i$ and the component parameters $\theta_i$, $i \in 1, \dots, p$.
+
+In this setup, it seems natural to test for the number of components by comparing two consecutive models (with $j$ and $j+1$ components, say) and regarding the mixture with $j$ components as the imposition of a null hypothesis on the larger model\footnote{Intuitively, the null hypothesis $H_0: \left\{ \exists i \in \{1, 2, \dots, j+1\}: w_{i} = 0 \right\} $ comes to mind.}. Traditionally, the problem of testing between nested models may be approached by applying the generalized likelihood ratio test and referring to a table of the $\chi^2_r$ distribution to assess significance, where $r$ is given by the number of constraints imposed on $H_1$ in order to arrive at $H_0$. However, in the context of mixture models, there is no unique way of obtaining $H_0$ from $H_1$. As an example, the two null hypotheses $H_0: w_{j+1} = 0$ and $H_0: \theta_{j+1} = \theta_{1}$ both yield the smaller model, showcasing the difficulties of applying this method. This problem has been studied extensively in the literature and numerous other approaches to complexity estimation have been suggested, laying the theoretical foundation for the subsequently described algorithms.
+
+This paper discusses the various categories of functions found in the \pkg{mixComp} package, ranging from methods based on Hankel matrices, to those based upon distances between densities and likelihood ratio tests. The examples depicted in the first chapters all contain mixtures of ``standard'' distributions for which evaluation of the density, cumulative distribution function and quantile function as well as random variate generation may be done by functions available from the \pkg{stats} package. The last chapter showcases how the \pkg{mixComp} package can be used to estimate the complexity of any mixture as long as the user provides functions generating random variates from the component distribution and valuating the density thereof.
+
+
+Two main features distinguish this package from other mixture-related \proglang{R} \citep{R} packages: First, it is focused on estimation of the complexity rather than the component weights and parameters. While these are often estimated as a by-product, all methods contained in \pkg{mixComp} are based on theory specifically developed to consistently estimate the number of components. Second, it is applicable to parametric mixtures well beyond those whose component distributions are included in the \pkg{stats} package, making it more customizable than most packages for model-based clustering. 
+
+The packages \pkg{mixtools} \citep{mixtools} and \pkg{flexmix} \citep{flexmix1, flexmix2, flexmix3} should both be mentioned at this point: Aside from \pkg{mixtools}'s focus on mixture-of-regressions and non-parametric mixtures which are less relevant to this package, it is widely used to fit (multivariate) normal, multinomial or gamma mixtures with the EM algorithm. Notably, it also contains routines for selecting the number of components based on information criteria and parametric bootstrapping of the likelihood ratio test statistic values. However, they are limited to multinomial and (a variety of) normal mixtures as well as mixtures-of-regressions. Second, while \pkg{flexmix} was developed to deal with mixtures-of-regression, it sets itself apart from other packages by its extensibility, a design principle that we also aimed for when creating the \pkg{mixComp} package.
+
+
+
+
+%% -- Manuscript ---------------------------------------------------------------
+
+%% - In principle "as usual" again.
+%% - When using equations (e.g., {equation}, {eqnarray}, {align}, etc.
+%%   avoid empty lines before and after the equation (which would signal a new
+%%   paragraph.
+%% - When describing longer chunks of code that are _not_ meant for execution
+%%   (e.g., a function synopsis or list of arguments), the environment {Code}
+%%   is recommended. Alternatively, a plain {verbatim} can also be used.
+%%   (For executed code see the next section.)
+
+\section[Objects and functions defined in mixComp]{Objects and functions defined in \pkg{mixComp}}
+\label{sec:objects}
+
+
+\bigskip
+\begin{table}
+\centering
+\normalsize
+\resizebox{\textwidth}{!}{\begin{tabular}{lll}
+\hline
+\addlinespace[0.05cm]
+Object class & Created via & Description \\
+\addlinespace[0.05cm]
+\hline
+\addlinespace[0.15cm]
+\code{Mix} & \code{Mix}& Represents a finite mixture\\
+\addlinespace[0.15cm]
+\code{rMix} & \code{rMix}& Randomly generated data from a finite mixture\\
+\addlinespace[0.15cm]
+\code{datMix} & \code{datMix} or \code{RtoDat}& Observed data from (presumably) a finite mixture\\
+\addlinespace[0.15cm]
+\code{hankDet} & \code{nonparamHankel}& Vector of estimated Hankel matrix determinants\\
+\addlinespace[0.15cm]
+\code{paramEst} & \code{paramHankel(.scaled)},  \code{L2(.boot).disc} & Complexity estimate $\hat{p}$, together with estimates of the\\
+&\code{hellinger(.boot).disc}, & weights $\hat{\mathbf{w}}$ and the component parameters $\hat{\bm{\theta}}$\\
+&\code{hellinger(.boot).cont} or \code{mix.lrt}& \\
+\addlinespace[0.15cm]
+\hline
+\end{tabular}}
+
+\caption{Objects defined in \pkg{mixComp}.}
+\label{tab:objects}
+\end{table}
+
+
+Table~\ref{tab:objects} depicts the five object classes defined in \pkg{mixComp}. The first two respectively represent a finite mixture distribution and a random sample drawn from such a distribution. The \code{Mix} object is printed as a matrix of component weights and parameters and is plotted as the density of the specified mixture, showing the overall as well as the component densities. The \code{rMix} object prints as the vector of observations and plots as a histogram, showcasing the individual components as well as the full sample. Both objects contain a number of attributes giving additional information, details of which can be found in the corresponding \proglang{R} help files. 
+
+\newpage
+The generation of an object of class \code{Mix} hinges on three central arguments: a string \code{dist} specifying the name of the family of component densities (or kernels) $\{g(x;\theta):\theta \in \Theta \}$, a vector \code{w} giving the weights $w_i$ and a list \code{theta.list}\footnote{The component parameters can also be supplied via the \code{...} argument.} containing the parameters of the component densities $\theta_i, i \in 1, \dots, p$. While the creation of \code{Mix} objects is mostly straightforward, two things should be noted in this regard: First, the \pkg{mixComp} procedures will search for functions called ``r\code{dist}'' and ``d\code{dist}'' in the accessible namespaces. For most ``standard'' distributions, these functions are contained in the \pkg{stats} package and do not need to be user-written (compare with Section~\ref{sec:non-standard}). To make use of these functions, it is essential that the string \code{dist} is named correctly (e.g. to create a gaussian mixture on the basis of the \pkg{stats} package, \code{dist} has to be specified as \code{norm} instead of \code{normal}, \code{gaussian} etc. for the package to find the functions \code{dnorm} and \code{rnorm}). Second, the names of the list elements of \code{theta.list} \footnote{or the names of the \code{...} arguments} have to match the names of the formal arguments of the functions ``d\code{dist}'' and ``r\code{dist}'' exactly (e.g. for a gaussian mixture, the list elements have to be named \code{mean} and \code{sd}, as these are the formal arguments used by \code{rnorm} and \code{dnorm}).
+
+<<Mix>>=
+set.seed(0)
+normLocMix <- Mix("norm", w = c(0.3, 0.4, 0.3), mean = c(10, 13, 17), 
+                  sd = c(1, 1, 1))
+poisMix <- Mix("pois", w = c(0.45, 0.45, 0.1), lambda = c(1, 5, 10))
+@
+
+
+<<Mixplot, echo = FALSE, results = hide>>=
+png("normMix.png", width = 370, height = 250)
+plot(normLocMix)
+dev.off()
+
+png("poisMix.png", width = 370, height = 250)
+plot(poisMix)
+dev.off()
+@
+
+\setkeys{Gin}{width=0.49\textwidth}
+\begin{figure}[!h]
+  \centering
+  \includegraphics[width=0.49\textwidth]{normMix}
+  \includegraphics[width=0.49\textwidth]{poisMix}
+\caption{Plot of \code{Mix} objects. Left: Normal mixture with $\mathbf{w} = (0.3, 0.4, 0.3)$, $\bm{\mu} = (10, 13, 17)$ and $\bm{\sigma} = (1, 1, 1)$; Right: Poisson mixture with $\mathbf{w} = (0.45, 0.45, 0.1)$ and $\bm{\lambda} = (1, 5, 10)$.}
+\label{mixplot}
+\end{figure}
+
+
+<<RMix>>=
+set.seed(0)
+normLocRMix <- rMix(1000, obj = normLocMix)
+poisRMix <- rMix(1000, obj = poisMix)
+@
+
+
+<<RMixplot, echo = FALSE, results = hide>>=
+png("normRMix.png", width = 370, height = 250)
+plot(normLocRMix)
+dev.off()
+
+png("poisRMix.png", width = 370, height = 250)
+plot(poisRMix)
+dev.off()
+@
+
+\setkeys{Gin}{width=0.49\textwidth}
+\begin{figure}[!h]
+  \centering
+  \includegraphics[width=0.49\textwidth]{normRMix}
+  \includegraphics[width=0.49\textwidth]{poisRMix}
+\caption{Plot of \code{rMix} objects. Left: Sample from the normal mixture above; Right: Sample from the poisson mixture above.}
+\label{mixplot}
+\end{figure}
+
+
+
+The third object class shown in Table~\ref{tab:objects}, called \code{datMix}, represents the data vector $\textbf{X} $ based on which the mixture complexity is supposed to be estimated. These objects are most central to the package, as every procedure estimating the order of a mixture takes a \code{datMix} object as input. Apart from $\mathbf{X}$, it contains other ``static'' information needed for the estimation procedure (in contrast to ``tuning parameters'', which can be changed with every function call. An example of such a tuning parameter is the number of bootstrap replicates for a function employing a bootstrap procedure). A brief overview of which ``static'' attributes need to be supplied for each complexity estimation routine is given in Table~\ref{tab:inputs}. 
+
+\begin{table}[h]
+\centering
+\resizebox{\textwidth}{!}{\begin{tabular}{lccccc}
+\hline
+\addlinespace[0.1cm]
+\proglang{R} function & \code{dist} & \code{theta.bound.list} & \code{MLE.function} & \code{Hankel.method} & \code{Hankel.function} \\ \hline
+\addlinespace[0.1cm]
+\code{nonparamHankel} & x &  &  & x & x \\
+\addlinespace[0.1cm]
+\code{paramHankel(.scaled)} & x & x & o + i (optional) & x & x \\
+\addlinespace[0.1cm]
+\code{L2(.boot).disc}  & x & x & i (optional) & & \\
+\addlinespace[0.1cm]
+\code{hellinger(.boot).disc}  & x & x & i (optional) & & \\
+\addlinespace[0.1cm]
+\code{hellinger(.boot).cont}  & x & x & i (optional) & & \\
+\addlinespace[0.1cm]
+\code{mix.lrt}  & x & x & o + i (optional) & & \\
+\addlinespace[0.1cm]
+\hline
+\end{tabular}
+}
+\caption{Inputs needed for different functions contained in the \pkg{mixComp} package. ``o'' and ``i'' respectively stand for input used during optimization and initialization.}
+\label{tab:inputs}
+\end{table}
+
+
+As a simple example of a given dataset to which mixture models have been applied extensively, take the Old Faithful dataset \citep{R, faithful1, faithful2}. In the context of mixture model estimation, the variable \code{waiting}, which gives the time in minutes between eruptions of the Old Faithful geyser in the Yellowstone National Park, is often considered to be the variable of interest. To estimate the number of components of the mixture distribution that provides a suitable approximation to the \code{waiting} data via \textbf{mixComp}, the raw data vector of observations has to be converted to a \code{datMix} object first. For the sake of exposition we specify all arguments of  the \code{datMix} function, starting with the vector of observations $\textbf{X}$ and the string \code{dist}, specifying $\{g(x;\theta):\theta \in \Theta \}$. As has often been done in the relevant literature, we assume that the data comes from a normal mixture.
+
+% R examples with comments
+<<datMix1>>=
+obs <- faithful$waiting
+norm.dist <- "norm"
+@
+
+Second, a named list of length $d$ containing the bounds of $\theta \in \Theta \subseteq \mathbf{R}^d$ has to be created. In this example, $\theta = \{\mu, \sigma\} \in \Theta = \mathbf{R} \times (0, \infty) \subseteq \mathbf{R}^2$.
+
+<<datMix2>>=
+norm.bound.list <- vector(mode = "list", length = 2)
+names(norm.bound.list) <- c("mean", "sd")
+norm.bound.list$mean <- c(-Inf, Inf)
+norm.bound.list$sd <- c(0, Inf)
+@
+
+Next, the argument \code{MLE.function} contains a single function if $d = 1$ or a list of functions of length $d$ otherwise, specifying the $d$ functions needed to estimate the MLE's of $\theta$ based on $\textbf{X}$ if $p$ were equal to 1 (i.e. the MLE's of the component distribution). If this argument is supplied and the \code{datMix} object is handed over to a complexity estimation procedure relying on optimizing over a likelihood function, the \code{MLE.function} attribute will be used for the single component case. In case the objective function is either not a likelihood or corresponds to a mixture with more than $1$ component, numerical optimization will be used based on \pkg{Rsolnp}'s function \code{solnp} \citep{solnp, Rsolnp}. The initial values (for the parameters of a $j$-component mixture, say) supplied to the solver are then calculated as follows: the data $\textbf{X}$ is clustered into $j$ groups by the function \code{clara} (of the \pkg{cluster} package by \citet{cluster}) and the data corresponding to each group is given to \code{MLE.function}. The size of the groups is taken as initial component weights and the MLE's are taken as initial component parameter estimates. Specifying \code{MLE.function} is optional and if it is not, for example because the MLE solution does not exists in closed form, numerical optimization is used to find the relevant MLE's.
+
+
+Presuming a normal mixture, one specifies $2$ functions, namely the MLE of the mean \linebreak $\hat{\mu}_{MLE} = \frac{1}{n}\sum_{i = 1}^n X_i$ and the MLE of the standard deviation $\hat{\sigma}_{MLE} = \sqrt{\frac{1}{n}\sum_{i = 1}^n (X_i - \hat{\mu}_{MLE})^2}$.
+
+<<datMix2>>=
+
+MLE.norm.mean <- function(dat) mean(dat)
+MLE.norm.sd <- function(dat){
+sqrt((length(dat) - 1) / length(dat)) * sd(dat)
+} 
+
+MLE.norm.list <- list("MLE.norm.mean" = MLE.norm.mean,
+                      "MLE.norm.sd" = MLE.norm.sd)
+@
+
+
+The last two arguments, \code{Hankel.method} and \code{Hankel.function}, need to be supplied if the mixture complexity is to be estimated based on the Hankel matrix of the moments of the mixing distribution. The reader is referred to Section~\ref{sec:hankel} for further information on how these arguments are to be specified\footnote{In this case, the simplifying assumption of unit variance is made. This would be a poor choice for the \code{waiting} data, so $p$ should not be estimated with one of the methods using these arguments, namely \code{nonparamHankel}, \code{paramHankel} and \code{paramHankel.scaled}, see Table~\ref{tab:inputs}.}. 
+
+<<datMix3>>=
+method <- "translation"
+
+mom.std.norm <- function(j){
+  ifelse(j %% 2 == 0, prod(seq(1, j - 1, by = 2)), 0)
+}
+@        
+\newpage
+Finally, all previously generated objects are combined to a \code{datMix} object.
+
+<<datMix4>>=
+faithful.dM <- datMix(obs, dist = norm.dist, 
+                      theta.bound.list = norm.bound.list,
+                      MLE.function = MLE.norm.list, Hankel.method = method,
+                      Hankel.function = mom.std.norm)
+@
+
+
+In the preceding example, the data vector $\textbf{X}$ was taken from an already existing dataset. As seen before, the \code{rMix} function can be used to generate a \code{n}-sized sample from a specific mixture. If this synthesized data is to be used in simulations (i.e. passed to one of the functions estimating the mixture complexity) an \code{rMix} object can be converted to a \code{datMix} object via the \code{RtoDat} function. Apart from \code{dist}, all \code{datMix} arguments have to be supplied to \code{RtoDat} likewise.
+
+
+Unlike the above mentioned objects whose creation precedes any type of mixture complexity estimation, objects of the bottom two classes (see Table~\ref{tab:objects}) contain the results of the estimation procedures. Generally, the functions estimating the number of components differ in the types of families of component densities $\{g(x;\theta):\theta \in \Theta \}$ for which they allow and in whether they provide estimates of the weights $\hat{w}_i$ and the component parameters $\hat{\theta}_i, i \in 1, \dots, \hat{p}$, the latter determining the object class of the estimation result. These differences are shown in Table~\ref{tab:outputs}. The function \code{nonparamHankel} returns an object of class \code{hankDet}, which is a vector of determinants (scaled and/or penalized), each entry belonging to a certain complexity estimate. The link between these determinants and $p$ will be discussed in Section~\ref{sec:hankel}. \code{paramEst} objects arise when using any other function estimating the mixture complexity, all of which additionally return estimates of the component weights and parameters. For both object classes, print and plot methods are available to summarize and visualize the estimation results. 
+
+
+\begin{table}
+\centering
+\resizebox{\textwidth}{!}{\begin{tabular}{llc}
+\hline
+\addlinespace[0.1cm]
+\proglang{R} function &  Restrictions on the family of the component densities & Estimation of $\mathbf{w}$ and $\bm{\theta}$\\ \hline
+\addlinespace[0.1cm]
+\code{nonparamHankel} & Compatible with \code{explicit}, \code{translation} or \code{scale}\\
+\addlinespace[0.1cm]
+\code{paramHankel(.scaled)} & Compatible with \code{explicit}, \code{translation} or \code{scale} & x \\
+\addlinespace[0.1cm]
+\code{L2(.boot).disc} & Discrete distributions & x \\
+\addlinespace[0.1cm]
+\code{hellinger(.boot).disc} & Discrete distributions & x \\
+\addlinespace[0.1cm]
+\code{hellinger(.boot).cont} & Continuous distributions & x \\
+\addlinespace[0.1cm]
+\code{mix.lrt} & & x \\
+\addlinespace[0.1cm]
+\hline
+\end{tabular}}
+\caption{Distribution restrictions and output types of different functions contained in the \pkg{mixComp} package.}
+\label{tab:outputs}
+\end{table}
+
+
+
+
+\section{Functions using Hankel matrices} \label{sec:hankel}
+
+In 1997, \cite{hankel} showed that the order of a mixture $p$ is characterized by the smallest integer $j$ such that the determinant of the $(j+1) \times (j+1)$ Hankel matrix of the first $2j$ moments of the mixing distribution equals zero. Moreover, it can be shown that this determinant is zero for all $j \geq p$. Formally, for any vector $\mathbf{c} = (c_0, \dots, c_{2k}) \in \mathbb{R}^{2k+1}$ with $c_0$ equal to 1, the \textit{Hankel matrix} of $\mathbf{c}$ is defined as the $(k+1)\times(k+1)$ matrix given by
+$$H(\mathbf{c})_{i,j} = c_{i+j-2}, \quad \quad 1 \leq i,j \leq k+1.$$
+Now, let $\textbf{c}^{2j+1} \in \mathbb{R}^{2j+1}$ be the vector containing the first $2j+1$ (raw) moments of the mixing distribution. For finite mixture models, this amounts to
+
+$$c^{2j+1}_k = \sum_{i=1}^p w_i \theta^k_i, \quad \text{ for } k \in \{0,\dots, 2j\} \text{ and } \theta_i \in \mathbb{R}, i \in \{1,\dots,p\}.$$
+
+Then, for all $j \geq 1$, $H(\textbf{c}^{2j+1})$ is non-negative and
+
+\begin{equation}
+	 p = \min\{j \geq 1 : \det H(\textbf{c}^{2j+1}) = 0\}.
+\end{equation}
+
+Making use of this fact, the first approach to estimating the order of a mixture that is implemented in \pkg{mixComp} relies on initially finding a consistent estimator of $\textbf{c}^{2j+1}$ based on $\textbf{X}$, say $\hat{\textbf{c}}^{2j+1}$, to then iteratively calculate the applicable Hankel matrix while increasing the assumed order $j$ until a sufficiently small value of $\det H(\hat{\textbf{c}}^{2j+1})$ is attained. However, since $\det H(\hat{\textbf{c}}^{2j+1})$ should be close to 0 for all $j \geq p$, this would lead to choosing $\hat{p}$ rather larger than the true value and it seems natural to introduce a penalty term. Therefore \cite{hankel} define the empirical penalized objective function as
+
+$$J_n(j) \coloneqq \lvert \det H(\hat{\textbf{c}}^{2j+1}) \rvert + A(j)l(n),$$
+
+with $l(n)$ being a positive function converging to $0$ as $n\to\infty$ and $A(j)$ being positive and strictly increasing. 
+$$\hat{p} \coloneqq \argmin_{j \in \mathbb{N}} J_n(j)$$
+is then a consistent estimator of $p$.
+
+As an extension to simply adding a penalty term to the determinant, a scaling approach was considered by \cite{lilian}. Let $\hat{d}_j = \det H(\hat{\textbf{c}}^{2j+1})$, $d_j = \det H(\textbf{c}^{2j+1})$ and $j_m \geq p, j_m \in \mathbb{N}$. Since the estimated moments $\hat{\textbf{c}}^{2j+1}$ are asymptotically normal, one can apply the delta method giving
+
+\begin{equation*}
+\sqrt{n}
+  \begin{pmatrix}
+    \hat{d}_1-d_1\\
+    \vdots\\
+    \hat{d}_{p-1}-d_{p-1}\\
+    \hat{d}_p-0\\
+    \vdots\\
+    \hat{d}_{j_m}-0
+  \end{pmatrix} \quad \overset{\mathcal{D}}{\longrightarrow} \quad \mathcal{N}(0_{j_m \times 1}, \Sigma_ {j_m \times j_m}).
+\end{equation*}
+
+Instead of inspecting the vector $(\hat{d}_1, \dots, \hat{d}_{j_m})$, one could therefore also base the complexity analysis on a vector of scaled determinants, defined as
+
+\begin{equation}
+\hat{d}_{\text{scaled}}^{j_m} = \hat{\Sigma}^{-1/2}
+    \begin{pmatrix}
+    \hat{d}_1\\
+    \vdots\\
+    \hat{d}_{j_m}\\
+  \end{pmatrix},
+  \label{eq:scaled}
+\end{equation}
+
+where $\hat{\Sigma}$ can be calculated by a nonparametric bootstrap procedure. This approach was proposed to address the issue of determinants already being very small from the beginning (even for $j = 1$), which, in the simulations by \cite{lilian}, made it hard to discern the ``best'' complexity estimate, a problem that was not reduced much by solely adding a penalty term.  
+
+
+With this general framework in place, the computation now merely hinges on calculating $\hat{\textbf{c}}^{2j+1}$. The \pkg{mixComp} package offers three methods to do so. The method to use depends on the family of component densities $\{g(x;\theta):\theta \in \Theta \}$ and is linked to some function $f_j(\textbf{X})$ needed to estimate $\hat{\textbf{c}}^{2j+1}$. The calculation method and the relevant function are specified when creating the \code{datMix} object as arguments \code{Hankel.method} and \code{Hankel.function}.
+
+\benum
+
+\item \code{Hankel.method = "explicit"}
+\vspace{2mm}
+\newline
+This method can be applied when a closed form expression for estimates of the moments of the mixing distribution exists. \code{Hankel.function} then contains the function explicitly estimating $\textbf{c}^{2j+1}$. 
+
+As an example, consider a mixture of geometric distributions, where it can be shown that\footnote{This expression is called $c^{2j+1}_j$ only for notational consisteny; the RHS is simply a closed-form expression for the $j$^{th} moment of the mixing distribution of a geometric mixture.}
+
+$$c^{2j+1}_j = 1 - \sum_{l = 0}^{j-1} f(l) = 1 - F(j-1),$$
+
+with $F$ the true cumulative distribution function. Hence one may take
+
+$$ \hat{c}^{2j+1}_j = 1 - \hat{F}(j-1)$$
+
+as an estimator, with  $\hat{F}$ being the empirical distribution function.
+
+<<hankel.geom>>=
+explicit.geom <- function(dat, j){
+  1 - ecdf(dat)(j - 1)
+}
+@
+
+As a second example, consider what \citet[p.~283, equation 3]{hankel} called the ``natural'' estimator, i.e. using
+
+\begin{equation}
+\hat{c}^{2j+1}_j = f_j\left(\frac{1}{n} \sum_{i=1}^n \psi_j(X_i)\right)
+\label{eq:1}
+\end{equation}
+
+when
+
+\begin{equation}
+c^{2j+1}_j = f_j(\mathbb{E}[\psi_j(X_i)]).
+\label{eq:2}
+\end{equation}
+
+Note that estimators of this form may also be supplied as \code{Hankel.method = "explicit"} with \code{Hankel.function} equal to the right handside of Equation~\ref{eq:1}. For example, the ``natural'' estimator is applicable in the case of poisson mixtures. If $Y \sim Pois(\lambda)$, it is a well known fact that
+
+$$\lambda^j = \mathbb{E}[Y(Y-1)\dots(Y-j+1)],$$
+
+which, in combination with Equation~\ref{eq:1} and \ref{eq:2}, suggests using
+
+$$\hat{c}^{2j+1}_j = \frac{1}{n} \sum_{i=1}^n X_i(X_i-1)\dots(X_i-j+1)$$
+
+as an estimator.
+
+<<hankel.pois>>=
+explicit.pois <- function(dat, j){
+  mat <- matrix(dat, nrow = length(dat), ncol = j) - 
+         matrix(0:(j-1), nrow = length(dat), ncol = j, byrow = TRUE)
+  return(mean(apply(mat, 1, prod)))
+}
+@ 
+
+
+\vspace{4mm}
+\item \code{Hankel.method = "translation"}
+\vspace{2mm}
+
+In example 3.1., \citet[p.~284]{hankel} describe how $\textbf{c}^{2j+1}$ can be estimated if the family of component distributions $(G_\theta)$ is given by $\text{d}G_\theta(x) = \text{d}G(x-\theta)$, where $G$ is a known probability distribution whose moments can be given explicitly. In this case, a triangular linear system can be solved for the estimated moments of the mixing distribution $\hat{\textbf{c}}^{2j+1}$ using the empirical moments of the mixture distribution and the known moments of $G$. The former can be estimated from the data vector $\textbf{X}$ whereas the latter has to be supplied by the user. Thus, \code{Hankel.function} contains a function of $j$ returning the $j^{th}$ (raw) moment of $G$.
+
+As an example, consider a mixture of normal distributions with unknown mean and unit variance. Then $G$ is the standard normal distribution, and its $j^{th}$ moment $m_j$ is defined as
+
+$$
+m_j=
+\begin{cases}
+0 & \text{if } j \text{ uneven}\\
+(j-1)!! & \text{if } j \text{ even}
+.\end{cases}
+$$
+
+<<hankel.norm>>=
+mom.std.norm <- function(j){
+  ifelse(j %% 2 == 0, prod(seq(1, j - 1, by = 2)), 0)
+}
+@
+
+\vspace{4mm}
+\item \code{Hankel.method = "scale"}
+\vspace{2mm}
+\newline
+Similarly, in example 3.2., \citet[p.~285]{hankel} describe how $\textbf{c}^{2j+1}$ can be estimated if the family of component distributions $(G_\theta)$ is given by $\text{d}G_\theta(x) = \text{d}G(\frac{x}{\theta})$, where $G$ is a known probability distribution whose moments can be given explicitly. Likewise, a triangular linear system can be solved for $\hat{\textbf{c}}^{2j+1}$, using the empirical moments of the mixture distribution and the known moments of $G$. \code{Hankel.function} contains a function of $j$ returning the $j^{th}$ moment of $G$. Note that squares have to be taken everywhere if for some integer $j$, $m_j = 0$ (compare with \citet[p.~285]{hankel}).
+
+As an example, consider a mixture of normal distributions with zero mean and unknown variance. Then $G$ is again the standard normal distribution, and its $j^{th}$ moment is defined as above.
+\eenum
+
+
+Coming back to the overall goal of complexity estimation, the function \code{nonparamHankel} returns all estimated determinant values corresponding to complexities up to \code{j.max}, so that the user can pick the lowest $j$ generating a sufficiently small determinant. The function allows the inclusion of a penalty term as a function of the sample size \code{n} and the currently assumed complexity \code{j} which will be added to the determinant value (by supplying \code{pen.function}), and/or scaling of the determinants (by setting \code{scaled  = TRUE}). For scaling, a nonparametric bootstrap is used to calculate the covariance of the estimated determinants, with \code{B} being the size of the bootstrap sample. The inverse of the square root\footnote{i.e. the matrix $S$ such that $A = SS$, where A is the (square) covariance matrix. The procedure uses \pkg{expm}'s \code{sqrtm} \citep{expm}.} of this covariance matrix is then multiplied with the estimated determinant vector to get the scaled determinant vector (compare with Equation~\ref{eq:scaled}).
+
+As an example, consider data generated from a three component geometric mixture, with $\textbf{w} = (0.1, 0.6, 0.3)$ and \mbox{\boldmath$\theta$} $ = (0.8, 0.2, 0.4)$. 
+
+
+<<hankelnp1>>=
+set.seed(1)
+geomMix <- Mix("geom", w = c(0.1, 0.6, 0.3), prob = c(0.8, 0.2, 0.4))
+geomRMix <- rMix(1000, obj = geomMix)
+
+geom.dM <- RtoDat(geomRMix, Hankel.method = "explicit", 
+                  Hankel.function = explicit.geom)
+@
+
+We define the penalty $A(j)l(n)$ as $\frac{j\log(n)}{\sqrt{n}}$ and scale the determinants according to Equation~\ref{eq:scaled}.
+
+<<hankelnp2>>=
+
+pen <- function(j, n){
+  (j * log(n)) / (sqrt(n))
+}
+
+set.seed(1)
+geomdets_sca_pen <- nonparamHankel(geom.dM, j.max = 5, scaled = TRUE, 
+                                   B = 1000, pen.function = pen)
+@
+
+<<hankelnp2.5>>=
+print(geomdets_sca_pen)
+@
+
+
+
+\setkeys{Gin}{width=0.75\textwidth}
+\begin{figure}[!h]
+  \centering
+<<hankelnpplot, fig=TRUE, eps=FALSE, height=4, width = 6>>=
+plot(geomdets_sca_pen, main = "Three component geometric mixture")
+@
+\caption{Plot of the determinants calculated by \code{nonparamHankel} given a sample from the 3-component geometric mixture corresponding to $\mathbf{w} = (0.1, 0.6, 0.3)$ and $\mathbf{p} = (0.8, 0.2, 0.4)$.}
+\label{hankelnpplot}
+\end{figure}
+
+As the preceding example shows, it can be quite difficult to determine the order estimate from the vector of estimated determinants alone. Thus, the package includes another option of estimating $p$ based on Hankel matrices, however, using a more ``parametric'' approach which goes hand in hand with estimating $\mathbf{w}$ and \mbox{\boldmath$\theta$}. The \code{paramHankel} procedure initially assumes the mixture to only contain a single component, setting $j = 1$, and then sequentially tests $p = j$ versus $p = j+1$ for $j = 1,2, \dots$, until the algorithm terminates. To do so, it determines the MLE for a $j$-component mixture $(\hat{\mathbf{w}}^j, \hat{\bm{\theta}}^j) = (\hat{w}_1, \dots, \hat{w}_j, \hat{\theta}_1, \dots, \hat{\theta}_j) \in W_j \times \Theta_j$, generates \code{B} parametric bootstrap samples of size $n$ from the distribution corresponding to $(\hat{\mathbf{w}}^j, \hat{\bm{\theta}}^j)$ and calculates \code{B} determinants of the corresponding $(j+1) \times (j+1)$ Hankel matrices. The null hypothesis $H_0: p = j$ is rejected and $j$ increased by $1$ if the determinant value based on the original data vector $\textbf{X}$ lies outside of the interval $[ql, qu]$, a range specified by the \code{ql} and \code{qu} empirical quantiles of the bootstrapped determinants. Otherwise, $j$ is returned as the order estimate $\hat{p}$. 
+
+\code{paramHankel.scaled} functions similarly to \code{paramHankel} with the exception that the bootstrapped determinants are scaled by the empirical standard deviation of the bootstrap sample. To scale the original determinant, \code{B} nonparametric bootstrap samples of size $n$ are generated from the data, the corresponding determinants are calculated and their empirical standard deviation is used.
+
+As seen below, \code{paramHankel} correctly identifies the data as having been generated by a $3$-component mixture (compare with Figure~\ref{hankelpplot}).
+<<hankelp2, results = hide>>=
+MLE.geom <- function(dat){
+  1/(mean(dat)+1)
+}
+
+geom.dM <- RtoDat(geomRMix, Hankel.method = "explicit", 
+                  Hankel.function = explicit.geom, 
+                  theta.bound.list = list(prob = c(0, 1)), 
+                  MLE.function = MLE.geom)
+
+set.seed(1)
+res <- paramHankel(geom.dM, j.max = 5, B = 1000, ql = 0.025, qu = 0.975)
+@
+
+<<hankelp3>>=
+print(res)
+@
+
+\setkeys{Gin}{width=0.75\textwidth}
+\begin{figure}[!h]
+  \centering
+<<hankelpplot, fig = TRUE, eps = FALSE, height = 4, width = 6>>=
+plot(res)
+@
+\caption{Plot of the fitted mixture calculated by \code{paramHankel} given a sample from the 3-component geometric mixture corresponding to $\mathbf{w} = (0.1, 0.6, 0.3)$ and $\mathbf{p} = (0.8, 0.2, 0.4)$.}
+\label{hankelpplot}
+\end{figure}
+
+\section{Functions using distances}
+
+Unlike the theory on Hankel matrices introduced in Section~\ref{sec:hankel}, many theoretical considerations rely on estimates of the weights $\mathbf{w}$ and the component parameters \mbox{\boldmath$\theta$}. As mentioned in the introduction, it is assumed that the family of component densities $\{g(x;\theta): \theta \in \Theta \}$ is known. To embed the subsequent algorithms in a more theoretical framework, consider the parametric family of mixture densities
+
+$$\mathcal{F}_j = \{ f_{j, \mathbf{w},\bm{\theta}} : (\mathbf{w}, \mbox{\boldmath$\theta$}) \in W_j \times \Theta_j \}.$$ 
+
+
+With $\{g(x;\theta): \theta \in \Theta \}$ set in advance, elements of $\mathcal{F}_j$ can be written as
+
+$$f_{j,\mathbf{w},\bm{\theta}}(x) = \sum_{i = 1}^j w_i g(x; \theta_i).$$
+
+Note that the support of $f$ will depend on the support of $g$ and $\mathcal{F}_j \subseteq \mathcal{F}_{j+1}$\footnote{This is obvious by setting $w_{j+1} = 0$.} for all $j$. Now take a specific mixture $f_0 = f_{p_0, \mathbf{w}_0,\bm{\theta}_0}$, where $(\mathbf{w}_0,\bm{\theta}_0) \in W_{p_0} \times \Theta_{p_0}$. Clearly, the mixture's complexity is defined as
+$$p_0 = \min\{j:f_0 \in \mathcal{F}_j\}.$$
+
+The above suggests an estimation procedure based on initially finding the ``best'' possible estimate (in a sense to be determined) $(\hat{\mathbf{w}}^j, \hat{\bm{\theta}}^j) \in W_j \times \Theta_j$ for a given value of $j$, in order to compare the thereby specified pdf/pmf 
+
+$$\hat{f}_j(x) = f_{j, \hat{\mathbf{w}}^j, \hat{\bm{\theta}}^j}(x),$$
+
+with a non-parametric density/probability mass estimate $\tilde{f}_n(x)$. As the classes $\mathcal{F}_j$ and $\mathcal{F}_{j+1}$ are nested, the distance $D$ (to be defined below) between $\hat{f}_j$ and $\tilde{f}_n$ will not increase with $j$. Thus, it makes sense to add some penalty term (increasing in $j$) to $D(\hat{f}_j, \tilde{f}_n)$ and find the first value of $j$ where the penalized distance for $j$ is smaller than that for $j+1$. Rearranging the terms gives rise to an algorithm starting at $j = 1$, involving some threshold $t(j,n)$ depending on the penalty, where, if $j$ is the first integer satisfying
+
+\begin{equation}
+D(\hat{f}_j, \tilde{f}_n) - D(\hat{f}_{j+1}, \tilde{f}_n) \leq t(j,n),
+\label{eq:distances}
+\end{equation}
+
+then $j$ is taken as the estimate $\hat{p}$. If the inequality is not fulfilled, $j$ is increased by $1$ and the procedure is repeated. Consistency of estimators defined this way has been shown in a number of cases, amongst them those used by the \pkg{mixComp} algorithms, and the reader is referred to \cite{l2}, \cite{hell} and \cite{hellcont} for the proofs relevant to the package.
+
+The preceding notation was held as broad as possible, since different distance measures $D$ and non-parametric estimators $\tilde{f}_n$ can be used. Those relevant to the package are mostly well-known, still, definitions can be found in Appendix~\ref{app:defs}. Three procedures are implemented in \pkg{mixComp} based on the foregoing methodology: \code{L2.disc}, \code{hellinger.disc} and \linebreak \code{hellinger.cont}.
+
+\benum
+
+\item \code{L2.disc}
+\vspace{2mm}
+\newline
+\code{L2.disc} employs the squared $L_2$ distance as the distance measure $D$ and is only to be used for \textit{discrete} mixtures since the nonparametric estimate $\tilde{f}_n$ is defined as the empirical probability mass function. In this setting, the ``best'' estimate $(\hat{\mathbf{w}}^j, \hat{\bm{\theta}}^j) \in W_j \times \Theta_j$ for a given $j$ corresponds to
+
+
+$$(\hat{\mathbf{w}}^j, \hat{\bm{\theta}}^j) = \argmin_{(\mathbf{w}, \bm{\theta})} L_2^2(f_{j, \mathbf{w}, \bm{\theta}}, \hat{f_n}) 
+= \argmin_{(\mathbf{w}, \bm{\theta})} \left\{ \sum_{x=0}^{\infty} f_{j, \mathbf{w}, \bm{\theta}}^2(x) - \frac{2}{n} \sum_{i=1}^{n}f_{j, \mathbf{w}, \bm{\theta}}(X_i)\right\}.$$
+
+
+As the squared $L_2$ distance might involve an infinite sum (for distributions with infinite support), the user has the option to determine the cut-off value using the \code{n.inf} argument, which is set to 1000 by default. The parameters $(\hat{\mathbf{w}}^{j+1}, \hat{\bm{\theta}}^{j+1})$ are obtained analogously. Once both parameter sets have been determined, the difference in their respective squared $L_2$ distances to $\tilde{f}_n$ is compared to a \code{threshold} (equaling $t(j,n)$ defined in Equation~\ref{eq:distances}). The threshold function can be entered directly or one of the predefined thresholds, called \code{"LIC"} or \code{"SBC"} and given respectively by
+
+$$\frac{0.6}{n} \ln\left(\frac{j+1}{j}\right) \quad\quad \text{ and} \quad\quad \frac{0.6 \ln(n)}{n} \ln\left(\frac{j+1}{j}\right)$$
+
+can be used. Note that, if a customized function is to be used, its arguments have to be named \code{j} and \code{n}. If the difference in squared distances is smaller than the selected threshold, the algorithm terminates and the true order is estimated as $j$, otherwise $j$ is increased by 1 and the procedure starts over. The reader is invited to consult \cite{l2} for further details.
+
+\item \code{hellinger.disc}
+\vspace{2mm}
+\newline
+This second function presents an alternative estimation procedure for \textit{discrete} mixtures, working much the same as \code{L2.disc}, however, using a different measure of distance and different thresholds. As the name suggests, it is based on the square of the Hellinger distance, causing the ``best'' estimate $(\hat{\mathbf{w}}^j, \hat{\bm{\theta}}^j) \in W_j \times \Theta_j$ for a given $j$ to equal
+
+$$(\hat{\mathbf{w}}^j, \hat{\bm{\theta}}^j) = \argmin_{(\mathbf{w}, \bm{\theta})} H^2(f_{j, \mathbf{w}, \bm{\theta}}, \hat{f_n}) 
+= \argmax_{(\mathbf{w}, \bm{\theta})} \sum_{x=0}^{X_{(n)}} \sqrt{f_{j, \mathbf{w}, \bm{\theta}}(x) \tilde{f}_n(x)},$$
+
+with $X_{(n)} = \max_{i = 1}^n (X_i)$. The relevant theory can be found in \cite{hell}. In accordance with their work, the two predefined thresholds are given by
+
+$$\text{AIC} = \frac{d+1}{n} \quad \quad \text{and} \quad \quad \text{SBC} = \frac{(d+1)\ln(n)}{2n}$$
+
+(recall that $d$ is the number of component parameters, i.e. $\Theta \subseteq \mathbb{R}^d$). If a customized function is to be used, its arguments have to named \code{j} and \code{n} once more, so if the user wants to include the number of component parameters $d$, it has to be entered explicitly. 
+
+\item \code{hellinger.cont}
+\vspace{2mm}
+\newline
+Unlike the two preceding functions, this procedure is applicable to \textit{continuous} mixture models and uses a kernel density estimator (KDE) as $\tilde{f}_n$. Its \code{bandwidth} can be chosen by the user, or the adaptive KDE found in \citet[p.~1720, equation (2)]{adap} may be used by specifying \code{bandwidth = "adaptive"}. The calculations are based on the continuous version of the squared Hellinger distance, where the ``best'' estimate $(\hat{\mathbf{w}}^j, \hat{\bm{\theta}}^j) \in W_j \times \Theta_j$ for a given $j$ corresponds to
+
+\begin{equation}
+(\hat{\mathbf{w}}^j, \hat{\bm{\theta}}^j) = \argmin_{(\mathbf{w}, \bm{\theta})} H^2(f_{j, \mathbf{w}, \bm{\theta}}, \hat{f_n}) 
+= \argmax_{(\mathbf{w}, \bm{\theta})} \int \sqrt{f_{j, \mathbf{w}, \bm{\theta}}(x)\tilde{f}_n(x)}\ dx.
+\label{eq:hellcont}
+\end{equation}
+
+Since the computational burden of optimizing over an integral to find the ``best'' weights and component parameters is immense, the algorithm approximates the objective function~\eqref{eq:hellcont} by sampling $n_s = $ \code{sample.n} observations $Y_i$ from $\tilde{f}_n(x)$ and setting
+
+$$
+(\hat{\mathbf{w}}^j, \hat{\bm{\theta}}^j) = \argmax_{(\mathbf{w}, \bm{\theta})} \sum_{i = 1}^{n_s} \sqrt{\frac{f_{j, \mathbf{w}, \bm{\theta}}(Y_i)}{\tilde{f}_n(Y_i)}}.
+$$
+
+This procedure uses the same thresholds as \code{hellinger.disc}.
+\eenum
+
+<<distance1, results = hide>>=
+normLoc.dM <- RtoDat(normLocRMix, theta.bound.list = norm.bound.list,
+                     MLE.function = MLE.norm.list)
+
+set.seed(0)
+res <- hellinger.cont(normLoc.dM, bandwidth = 0.5, sample.n = 5000, 
+                      threshold = "AIC")
+@
+
+<<distance2>>=
+print(res)
+@
+
+\setkeys{Gin}{width = 0.75\textwidth}
+\begin{figure}[!h]
+  \centering
+<<hellinger.cont.plot, fig = TRUE, eps = FALSE, height = 4, width = 6>>=
+plot(res)
+@
+\caption{Plot of the mixture density estimated by \code{hellinger.cont}  given a sample from the 3-component normal mixture corresponding to $\mathbf{w} = (0.3, 0.4, 0.3)$, $\bm{\mu} = (10, 13, 17)$ and $\bm{\sigma} = (1, 1, 1)$.}
+\label{hellcontplot}
+\end{figure}
+
+At this point, it is worth having a closer look at the thresholds. They each satisfy $t(j,n) \rightarrow 0$ as $n \rightarrow \infty$, the sole condition the authors require. Now, the consistency proofs for estimators defined via Equation~\ref{eq:distances} all rely on the fact that, as $n \rightarrow \infty$,
+
+$$D(\hat{f}_j, \tilde{f}_n) - D(\hat{f}_{j+1}, \tilde{f}_n) \rightarrow d_j > 0, \text{ for } j < p$$
+
+and
+
+$$D(\hat{f}_j, \tilde{f}_n) - D(\hat{f}_{j+1}, \tilde{f}_n) \rightarrow 0, \text{ for } j \geq p,$$
+
+where $p$ is the true complexity (compare with \citet[p.~4253, Proof of the Theorem]{l2}, \citet[p.~4383, Proof]{hell} and \citet[p.~1485, Proof of Theorem 1]{hellcont}). If however $t(j,n)$ goes to 0 faster than $D(\hat{f}_j, \tilde{f}_n) - D(\hat{f}_{j+1}, \tilde{f}_n)$ for $j \geq p$, asymptotically, the decision rule outlined above will always lead to $j$ being rejected. Therefore, a second condition should be placed on $t(j,n)$, namely choosing it in accordance with 
+
+$$D(\hat{f}_p, \tilde{f}_n) - D(\hat{f}_{p+1}, \tilde{f}_n) = o_p(t(j,n)).$$
+
+Both the LIC and the AIC as well as the SBC in the continuous case do not satisfy this condition, yet they are still part of the package for two reasons: First, since they were used in the original papers, they are included for the sake of completeness and reproducibility of original results. Second, consistency is an asymptotic property, and while the aforementioned thresholds do not fulfill it, they still perform well (and not rarely better than consistent thresholds) for smaller sample sizes. In the example above, the number of components is correctly identified under the non-consistent AIC threshold. Nonetheless, the user will be warned when using one of non-consistent predefined thresholds.
+
+\code{Warning:\linebreak
+While being used in Woo \& Sriram's original paper, asymptotically, the \linebreak
+threshold `AIC' does not go to 0 slower than the difference in squared \linebreak
+Hellinger distances once the correct order p is reached and the estimator is \linebreak
+therefore not consistent.}
+
+
+The preceding example shows that $\hat{p}$ directly depends on the chosen threshold $t(j, n)$, as is also obvious from Equation~\ref{eq:distances}. While some thresholds can be motivated better than others from a theoretical perspective, the choice will ultimately always remain somewhat arbitrary. It would thus be desirable to have versions of the preceding functions which do not suffer from this drawback. \code{L2.boot.disc}, \code{hellinger.boot.disc} and \code{hellinger.boot.cont} all work similarly to their counterparts, with the exception that the difference in distances is not compared to a predefined threshold but a value generated by a bootstrap procedure.  At every iteration (of $j$), the procedure sequentially tests $p = j$ versus $p = j+1$ for $j = 1,2, \dots$, using a parametric bootstrap to generate \code{B} samples of size $n$ from a $j$-component mixture given the previously calculated ``best'' parameter values $(\hat{\mathbf{w}}^j, \hat{\bm{\theta}}^j)$. For each of the bootstrap samples, again the ``best'' estimates corresponding to densities with $j$ and $j+1$ components are calculated, as well as their difference in distances from $\tilde{f}_n$. The null hypothesis $H_0: p = j$ is rejected and $j$ increased by $1$ if the original difference $D(\hat{f}_j, \tilde{f}_n) - D(\hat{f}_{j+1}, \tilde{f}_n)$ lies outside of the interval $[ql, qu]$, specified by the \code{ql} and \code{qu} empirical quantiles of the bootstrapped differences. Otherwise, $j$ is returned as the order estimate $\hat{p}$. 
+
+As an example, consider the poisson \code{rMix} object generated in Section~\ref{sec:objects}. The corresponding \code{datMix} object is generated as follows: 
+
+
+<<distance.boot1>>=
+poisList <- vector(mode = "list", length = 1)
+names(poisList) <- "lambda"
+poisList$lambda <- c(0, Inf)
+
+MLE.pois <- function(dat) mean(dat)
+
+
+pois.dM <- RtoDat(poisRMix, theta.bound.list = poisList, 
+                  MLE.function = MLE.pois)
+@
+
+\code{hellinger.boot.disc} identifies the number of components correctly.
+
+<<distance.boot2, results = hide>>=
+set.seed(1)
+res <- hellinger.boot.disc(pois.dM, B = 50, ql = 0.025, qu = 0.975)
+@
+
+<<distance.boot3>>=
+print(res)
+@
+
+\setkeys{Gin}{width = 0.75\textwidth}
+\begin{figure}[!h]
+  \centering
+<<hell.boot.plot, fig = TRUE, eps = FALSE, height = 4, width = 6>>=
+plot(res)
+@
+\caption{Plot of the mixture density estimated by \code{hellinger.boot.disc} given a sample from the 3-component poisson mixture corresponding to $\mathbf{w} = (0.45, 0.45, 0.1)$ and $\bm{\lambda} = (1, 5, 10)$.}
+\label{hellbootplot}
+\end{figure}
+
+\section{Functions using LRTS}
+
+As a third option of estimating the mixture complexity, the \pkg{mixComp} package provides an algorithm based on the likelihood ratio test statistic (LRTS), sequentially testing $p = j$ versus $p = j+1$ for $j = 1,2, \dots$, until the algorithm terminates. As noted in Section~\ref{sec:intro}, it is not possible to use the generalized likelihood ratio test in the context of mixture models directly as the standard way of obtaining the asymptotic distribution of the LRTS under the null hypothesis cannot be applied. However, one can get estimates of the test's critical values by employing a bootstrap procedure.
+
+Making use of this approach, the function \code{mix.lrt} iteratively increases the assumed order $j$ and finds the MLE for both, the density of a mixture with $j$ and $j+1$ components, giving $(\hat{\mathbf{w}}^{j}, \hat{\bm{\theta}}^{j}) \in W_j \times \Theta_j$  and $(\hat{\mathbf{w}}^{j+1}, \hat{\bm{\theta}}^{j+1}) \in W_{j+1} \times \Theta_{j+1}$. It then calculates the corresponding LRTS, defined as
+
+$$\text{LRTS}= -2\ln\left(\frac{L_0}{L_1}\right) \quad \text{, with}$$
+
+$$L_0 = L_{\textbf{X}}(\hat{\mathbf{w}}^{j}, \hat{\bm{\theta}}^{j}) \quad\quad \text{and} \quad\quad L_1 = L_{\textbf{X}}(\hat{\mathbf{w}}^{j+1}, \hat{\bm{\theta}}^{j+1})\text{,}$$
+
+$L_{\textbf{X}}$ being the likelihood function given the data ${\textbf{X}}$.
+
+Next, a parametric bootstrap is used to generate \code{B} samples of size $n$ from a $j$-component mixture given the previously calculated MLE $(\hat{\mathbf{w}}^{j}, \hat{\bm{\theta}}^{j})$. For each of the bootstrap samples, the MLEs corresponding to densities of mixtures with $j$ and $j+1$ components are calculated, as well as the LRTS. The null hypothesis $H_0: p = j$ is rejected and $j$ increased by $1$ if the LRTS based on the original data vector $\textbf{X}$ is larger than the chosen \code{quantile} of its bootstrapped counterparts. Otherwise, $j$ is returned as the order estimate $\hat{p}$. For further details, the reader is referred to \cite{lrt}.
+
+For example, refer back to the \code{waiting} variable from the \code{faithful} dataset. The \code{mix.lrt} function returns a 2-component mixture with reasonable estimates for the component weights and parameters.
+
+<<mix.lrt1, results = hide>>=
+
+set.seed(1)
+res <- mix.lrt(faithful.dM, B = 50, quantile = 0.95)
+@
+
+<<mix.lrt2>>=
+
+print(res)
+@
+
+
+\setkeys{Gin}{width=0.75\textwidth}
+\begin{figure}[!h]
+  \centering
+<<mix.lrt.plot, fig = TRUE, eps = FALSE, height = 4, width = 6>>=
+plot(res)
+@
+\caption{Plot of the mixture density estimated by \code{mix.lrt} applied to the \code{waiting} variable of the Old Faithful dataset.}
+\label{newdistplot}
+\end{figure}
+
+
+\section{Non-standard mixtures}
+\label{sec:non-standard}
+
+In all preceding examples, the families of component densities $\{g(x;\theta):\theta \in \Theta \}$ belonged to one of the ``standard'' probability distributions included in the \pkg{stats} package, which provides the density/mass function, cumulative distribution function, quantile function and random variate generation for selected distributions. The function names are of the form \code{dxxx}, \code{pxxx}, \code{qxxx} and \code{rxxx} respectively. With some additional effort, it is possible to use the \pkg{mixComp} package on ``non-standard'' distributions -- the user merely has to provide functions evaluating the density and generating random numbers for the component distribution. In accordance with \proglang{R} conventions, the user-generated function \code{dxxx} has to take \code{x} and the distribution parameters as input and returns the value of the density function specifed by the parameters at the point \code{x}. Likewise, \code{rxxx} requires \code{n} and the distribution parameters as input and returns \code{n} random numbers based on the distribution specified by the aforementioned parameters.
+
+As an example, consider a sample $\textbf{X}$ from a 3-component mixture of normals with means equal to $10, 11$ and $13$. Assume that the standard deviation of all components is known to be $0.5$, yet the number of components and their means are unknown. Then each of the components follows a $\mathcal{N}(\mu, 0.5)$ distribution, which shall be called \code{norm0.5}. The first step is always that of creating the \code{dxxx} and \code{rxxx} functions, since they will be called by the \pkg{mixComp} functions.
+
+
+
+
+<<newdist1>>=
+dnorm0.5 <- function(x, mean){
+  dnorm(x, mean = mean,  sd = 0.5)
+}
+
+rnorm0.5 <- function(n, mean){
+  rnorm(n, mean = mean,  sd = 0.5)
+}
+@
+
+Now, the \code{Mix} object and the observation vector $\mathbf{X}$ can be created.
+
+<<newdist2>>=
+set.seed(1)
+norm0.5Mix <- Mix("norm0.5", w = c(0.3, 0.4, 0.3), mean = c(10, 11, 13))
+norm0.5RMix <- rMix(1000, obj = norm0.5Mix)
+@
+
+<<Mixplot, echo = FALSE, results = hide>>=
+png("norm0.5Mix.png", width = 370, height = 250)
+plot(norm0.5Mix)
+dev.off()
+
+png("norm0.5RMix.png", width = 370, height = 250)
+plot(norm0.5RMix)
+dev.off()
+@
+
+\setkeys{Gin}{width=0.49\textwidth}
+\begin{figure}[!h]
+  \centering
+  \includegraphics[width=0.49\textwidth]{norm0.5Mix}
+  \includegraphics[width=0.49\textwidth]{norm0.5RMix}
+\caption{Left: Density of a normal mixture with $\mathbf{w} = (0.3, 0.4, 0.3)$, $\bm{\mu} = (10, 11, 13)$ and $\bm{\sigma} = (0.5, 0.5, 0.5)$. Right: Histogram of a random sample of size 1000 from that mixture.}
+\label{mixplot}
+\end{figure}
+
+
+The creation of the \code{datMix} object then looks as follows:
+
+<<newdist3>>=
+
+norm0.5.list <- vector(mode = "list", length = 1)
+names(norm0.5.list) <- c("mean")
+norm0.5.list$mean <- c(-Inf, Inf)
+
+MLE.norm0.5 <- function(dat) mean(dat)
+
+norm0.5.dM <- RtoDat(norm0.5RMix, theta.bound.list = norm0.5.list,
+                     MLE.function = MLE.norm0.5)
+@
+
+
+Finally, the \pkg{mixComp} procedures can be used on the \code{datMix} object as usual.
+
+<<newdist4, results = hide>>=
+
+set.seed(1)
+res <- mix.lrt(norm0.5.dM, B = 50, quantile = 0.95)
+@
+
+<<newdist5>>=
+
+print(res)
+@
+
+
+\setkeys{Gin}{width=0.75\textwidth}
+\begin{figure}[!h]
+  \centering
+<<newdistplot, fig=TRUE, eps=FALSE, height=4, width = 6>>=
+plot(res)
+@
+\caption{Plot of the estimate of the mixture density produced by \code{mix.lrt} given a sample from the 3-component normal mixture corresponding to $\mathbf{w} = (0.3, 0.4, 0.3)$, $\bm{\mu} = (10, 11, 13)$ and \linebreak $\bm{\sigma} = (0.5, 0.5, 0.5)$.}
+\label{newdistplot}
+\end{figure}
+
+
+
+
+%% -- Summary/conclusions/discussion -------------------------------------------
+\newpage
+\section{Summary and discussion} \label{sec:summary}
+
+In this paper we presented the R package \pkg{mixComp}, a collection of routines developed to estimate a mixture's complexity from a data sample $\textbf{X}$. Moreover, it provides the possibility of generating artificial data from specified mixtures as well as proper visualization tools for the complexity estimation result, plotting either the successive determinant values or the final fitted mixture. If estimates of the component weights and parameters are sought, $\hat{p}$ can be passed to one of the many \proglang{R} packages specialized in their calculation, or one of the \pkg{mixComp} functions returning weight and parameter estimates can be used. However, it should be noted that the theory on which this package is based concentrates on showing consistency for $\hat{p}$ -- other estimates obtained in the process are merely by-products. A primary goal of the package was to make it extendible, meaning that it can be utilized on mixtures of less well-known distributions, as long as sufficient information on the density and random variate generation is provided. We hope that this package will be useful for practitioners in the many areas where mixture models are applicable.
+
+%% -- Optional special unnumbered sections -------------------------------------
+
+\section*{Computational details}
+
+All computations and graphics in this paper have been done using \proglang{R} version 4.0.0 with the packages \pkg{boot} 1.3-24, \pkg{cluster} 2.1.0, \pkg{expm} 0.999-4, \pkg{matrixcalc} 1.0-3, \pkg{Rsolnp} 1.16 and \pkg{kdensity} 1.0.1. \proglang{R} itself
+and all packages used are available from the Comprehensive \proglang{R} Archive Network (CRAN) at \url{https://CRAN.R-project.org/}.
+
+
+%% -- Bibliography -------------------------------------------------------------
+%% - References need to be provided in a .bib BibTeX database.
+%% - All references should be made with \cite, \citet, \citep, \citealp etc.
+%%   (and never hard-coded). See the FAQ for details.
+%% - JSS-specific markup (\proglang, \pkg, \code) should be used in the .bib.
+%% - Titles in the .bib should be in title case.
+%% - DOIs should be included where available.
+
+\bibliography{refs}
+
+
+%% -- Appendix (if any) --------------------------------------------------------
+%% - After the bibliography with page break.
+%% - With proper section titles and _not_ just "Appendix".
+
+\newpage
+
+\begin{appendix}
+
+\section{Distance and non-parametric estimator definitions} \label{app:defs}
+
+
+Let $\textbf{X} = \{X_1, \dots, X_n\}$ be an i.i.d. sample of size $n$ from some continuous distribution with unknown density $f$. Its \textit{kernel densty estimator} is defined as
+
+$$\tilde{f}_n(x) \coloneqq \frac{1}{nc_n}\sum_{i=1}^n K\left( \frac{x-X_i}{c_n} \right),$$	
+
+with kernel $K$ and bandwidth $c_n$.
+	
+\vspace{1cm}
+
+
+As an extension, \cite{adap} defined the \textit{adaptive kernel density estimator} as
+
+$$\tilde{f}_n(x) \coloneqq \frac{1}{n}\sum_{i=1}^n \sum_{j=1}^k \frac{a_j(X_i)}{c_{n, j}} K\left( \frac{x-X_i}{c_{n, j}} \right),$$	
+
+with kernel $K$, bandwidth $c_{n, j}$ and weights (positive and summing to $1$) $a_j(X_i)$.
+	
+\vspace{1cm}
+
+Let $\textbf{X} = \{X_1, \dots, X_n\}$ be an i.i.d. sample of size $n$ from some discrete distribution with unknown probability mass function $f$. Its \textit{empirical probability mass function} is defined as
+
+$$\tilde{f}_n(x) \coloneqq \frac{1}{n}\sum_{i=1}^n \mathbbm{1}_{\{X_i = x\}}.$$	
+
+
+\vspace{1cm}
+
+Let $g, f$ be two probability mass functions defined on $\mathcal{X}$.
+The \textit{squared} $L_2$ \textit{distance} between $g$ and $f$ is given by
+
+$$L_2^2(g,f) \coloneqq \sum_{\mathcal{X}} (g(x)-f(x))^2.$$	
+	
+
+\vspace{1cm}
+
+Let $g, f$ be two density or probability mass functions defined on $\mathcal{X}$.
+The \textit{squared Hellinger distance} between $g$ and $f$ is given by
+
+$$H^2(g,f) \coloneqq \sum_{\mathcal{X}} \left( \sqrt{g(x)}-\sqrt{f(x)} \right)^2$$	
+	
+in the discrete case and by
+
+$$H^2(g,f) \coloneqq \int_{\mathcal{X}} \left(  \sqrt{g(x)}-\sqrt{f(x)} \right)^2 dx$$	
+
+in the continuous case.
+
+\end{appendix}
+
+%% -----------------------------------------------------------------------------
+
+
+\end{document}
