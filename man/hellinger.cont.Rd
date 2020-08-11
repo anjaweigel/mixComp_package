@@ -12,10 +12,10 @@ Estimation of a continuous mixture's complexity as well as its component weights
 
 \usage{
 hellinger.cont(obj, bandwidth, j.max = 10, threshold = "SBC", sample.n = 5000, 
-               sample.plot = TRUE, control = c(trace = 0))
+               sample.plot = FALSE, control = c(trace = 0))
 
 hellinger.boot.cont(obj, bandwidth, j.max = 10, B = 100, ql = 0.025,
-                    qu = 0.975, sample.n = 3000, sample.plot = TRUE,
+                    qu = 0.975, sample.n = 3000, sample.plot = FALSE,
                     control = c(trace = 0), ...)
 }
 
