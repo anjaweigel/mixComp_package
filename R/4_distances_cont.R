@@ -19,7 +19,7 @@ ADAPkde <- function(dat, ndistparams, n, j, init, dist, formals.dist, dist_call,
   # parameters theta.list.long (both supplied via 'init') at points dat
   
   w.array <- matrix(w, nrow = n, ncol = j, byrow = TRUE)
-  f.array <- array(do.call(dist_call, args = theta.list.long), dim = c(n, j))
+  f.array <- array(suppressWarnings(do.call(dist_call, args = theta.list.long)), dim = c(n, j))
   a.array <- w.array * f.array / rowSums(array(w.array * f.array, dim = c(n, j)))
   # a.array will be infinite if f.array is infinite for any point (can happen when
   # solnp does not converge). 
@@ -62,10 +62,10 @@ ADAPkde <- function(dat, ndistparams, n, j, init, dist, formals.dist, dist_call,
     
     if(is.null(bs_iter)){ # not in bootstrap loop yet
       
-      txt <- "Sample from KDE based on original data"
+      txt <- "Sample from KDE based on data"
       hist(sample, freq = FALSE, col = "light grey", main = txt, breaks = 100,
            xlab = "Sample")
-      vals <- seq(min(dat), max(dat), length.out = 100)
+      vals <- seq(min(sample), max(sample), length.out = 100)
       kdevals <- kde(vals)
       lines(vals, kdevals) 
       
@@ -75,7 +75,7 @@ ADAPkde <- function(dat, ndistparams, n, j, init, dist, formals.dist, dist_call,
       txt <- paste("Sample from Bootstrap KDE: Iteration ", bs_iter, sep = "")
       hist(sample, freq = FALSE, col = "light grey", breaks = 100,
            main = txt, xlab = "Sample")
-      vals <- seq(min(dat), max(dat), length.out = 100)
+      vals <- seq(min(sample), max(sample), length.out = 100)
       lines(vals, kde(vals)) 
       
     }
@@ -184,7 +184,7 @@ ADAPkde <- function(dat, ndistparams, n, j, init, dist, formals.dist, dist_call,
 ##          a 'paramEst' object
 
 hellinger.cont <- function(obj, bandwidth, j.max = 10, threshold = "SBC", 
-                           sample.n = 5000, sample.plot = TRUE, control = c(trace = 0)){
+                           sample.n = 5000, sample.plot = FALSE, control = c(trace = 0)){
   
   # get standard variables
   variable_list <- .get.list(obj)
@@ -293,7 +293,7 @@ hellinger.cont <- function(obj, bandwidth, j.max = 10, threshold = "SBC",
       
       if(sample.plot == TRUE){
         hist(sample, freq = FALSE, breaks = 100)
-        lines(seq(min(dat), max(dat), length.out = 100), kde(seq(min(dat), max(dat), length.out = 100)))
+        lines(seq(min(sample), max(sample), length.out = 100), kde(seq(min(sample), max(sample), length.out = 100)))
       }
       
       # calculate optimal parameters for j0 = 1
@@ -359,7 +359,7 @@ hellinger.cont <- function(obj, bandwidth, j.max = 10, threshold = "SBC",
 ##          a 'paramEst' object (using bootstrap)
 
 hellinger.boot.cont <- function(obj, bandwidth, j.max = 10, B = 100, ql = 0.025,
-                                qu = 0.975, sample.n = 3000, sample.plot = TRUE,
+                                qu = 0.975, sample.n = 3000, sample.plot = FALSE,
                                 control = c(trace = 0), ...){
 
   # get standard variables
@@ -457,7 +457,7 @@ hellinger.boot.cont <- function(obj, bandwidth, j.max = 10, B = 100, ql = 0.025,
       
       if(sample.plot == TRUE){
         hist(sample, freq = FALSE, breaks = 100)
-        lines(seq(min(dat), max(dat), length.out = 100), kde(seq(min(dat), max(dat), length.out = 100)))
+        lines(seq(min(sample), max(sample), length.out = 100), kde(seq(min(sample), max(sample), length.out = 100)))
       }
       
       # calculate optimal parameters for j0 = 1
@@ -542,7 +542,7 @@ hellinger.boot.cont <- function(obj, bandwidth, j.max = 10, B = 100, ql = 0.025,
         sample <- kde.list$sample
         
       } else { # use the standard gaussian Kernel estimate with the supplied bandwidth
-        
+      
         # compute the kde and draw a sample from it
         kde <- kdensity(dat, bw = bandwidth, kernel = "gaussian")
         rkernel <- function(n) rnorm(n, sd = bandwidth)
@@ -552,7 +552,7 @@ hellinger.boot.cont <- function(obj, bandwidth, j.max = 10, B = 100, ql = 0.025,
           txt <- paste("Sample from Bootstrap KDE: Iteration ", bs_iter, sep = "")
           hist(sample, freq = FALSE, breaks = 100, col = "light grey", 
                main = txt, xlab = "Sample")
-          lines(seq(min(dat), max(dat), length.out = 100), kde(seq(min(dat), max(dat), length.out = 100)))
+          lines(seq(min(sample), max(sample), length.out = 100), kde(seq(min(sample), max(sample), length.out = 100)))
         }
 
       }

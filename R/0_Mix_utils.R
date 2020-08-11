@@ -343,7 +343,7 @@ plot.rMix <- function(x, xlab = attr(obj, "name"), ylim = NULL,
                       main = paste("Histogram of", attr(obj, "name")), breaks = NULL,
                       col = "grey", components = TRUE, stacked = FALSE, component.colors = NULL, 
                       freq = TRUE, plot = TRUE, ...){
-  
+
   obj <- x
   if(!is.logical(components)) stop("'components' has to be logical!")
   if(!is.logical(stacked)) stop("'stacked' has to be logical!")
@@ -353,13 +353,15 @@ plot.rMix <- function(x, xlab = attr(obj, "name"), ylim = NULL,
   
   if(is.null(breaks)){ # create default breaks
     
-    hist <- hist(obj, plot = FALSE)
+    hist <- hist(obj, plot = FALSE, right = FALSE)
     breaks <- hist$breaks
     diffbreaks <- unique(diff(breaks)*0.5)
+    if(diff(range(diffbreaks)) < .Machine$double.eps^0.5) diffbreaks <- diffbreaks[1]
     nbreaks <- length(breaks)
     breaks <- rep(breaks, each = 2) + rep(c(0, diffbreaks), nbreaks) 
     # making breaks twice as fine so that components can also be shown nicely 
   }
+
   
   if(is.null(component.colors) && components == TRUE){ # default colors
     if(stacked == FALSE)
@@ -372,8 +374,9 @@ plot.rMix <- function(x, xlab = attr(obj, "name"), ylim = NULL,
       warning("Stacked components cannot be shown when 'freq' is FALSE. Setting freq = TRUE.")
       freq <- TRUE
     } else if(is.null(ylim) || anyNA(ylim)){ 
+
       # ordinate values such that component probabilities surely fit in the plot
-      plt.inv <- hist(obj, breaks = breaks, plot = FALSE, ...)
+      plt.inv <- hist(obj, breaks = breaks, plot = FALSE, right = FALSE, ...)
       breaks <- plt.inv$breaks
       ylim <- c(0, 1/min(diff(breaks)))
     } 
@@ -386,7 +389,9 @@ plot.rMix <- function(x, xlab = attr(obj, "name"), ylim = NULL,
     hist(obj, col = col, breaks = breaks, main = main, xlab = xlab, freq = freq, 
          ylim = ylim, plot = plot, right = FALSE, ...)
     # invisible plot to reuse breaks later for components
-    plt.inv <- suppressWarnings(hist(obj, breaks = breaks, plot = FALSE, ...))
+    
+    plt.inv <- suppressWarnings(hist(obj, breaks = breaks, plot = FALSE, right = FALSE, 
+                                     ...))
   }
   
   if(components == TRUE){
@@ -397,7 +402,7 @@ plot.rMix <- function(x, xlab = attr(obj, "name"), ylim = NULL,
     if(stacked == FALSE){ # just plot the individual histograms
       for (i in 1:p){
         hist(obj[ind == i], col = component.colors[i], breaks = breaks,
-             add = TRUE, freq = freq, plot = plot, ...)
+             add = TRUE, freq = freq, plot = plot, right = FALSE, ...)
       }
       
     } else { # plot stacked rectangles
@@ -409,17 +414,16 @@ plot.rMix <- function(x, xlab = attr(obj, "name"), ylim = NULL,
       
       for(i in 2:(p + 1)){ # for every component i...
         
-        # ... how many observations lie within first bin 
-        # (seperate because first breaks value need to be included)
-        mat[i, 1] <- length(obj[obj <= breaks[2] & obj >= breaks[1] & ind == (i - 1)])
-        matcum[i, 1] <- matcum[i - 1, 1] + mat[i, 1]
-        
-        # ... how many observations lie within other bins
-        mat[i, 2:ncol(mat)] <- mapply(function(j) length(obj[obj <= breaks[j + 1] &
-                                                          obj > breaks[j] &
-                                                          ind == (i - 1)]), 2:ncol(mat))
-        matcum[i, 2:ncol(mat)] <- mapply(function(j) matcum[i - 1, j] + mat[i, j], 2:ncol(mat))
+        # How many observations lie within the bins
+        mat[i, 1:(ncol(mat)-1)] <- mapply(function(j) length(obj[obj < breaks[j + 1] &
+                                                          obj >= breaks[j] &
+                                                          ind == (i - 1)]), 1:(ncol(mat)-1))
+        matcum[i, 1:(ncol(mat)-1)] <- mapply(function(j) matcum[i - 1, j] + mat[i, j], 1:(ncol(mat)-1))
           
+        # ... how many observations lie within last bin 
+        # (seperate because both breaks value need to be included)
+        mat[i, ncol(mat)] <- length(obj[obj <= breaks[ncol(mat) + 1] & obj >= breaks[ncol(mat)] & ind == (i - 1)])
+        matcum[i, ncol(mat)] <- matcum[i - 1, ncol(mat)] + mat[i, ncol(mat)]
         
         rect(xleft = breaks[1:(nbreaks - 1)], ybottom = matcum[i - 1, ], xright = breaks[2:(nbreaks)], 
              ytop = matcum[i, ], col = component.colors[i - 1])
