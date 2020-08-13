@@ -42,7 +42,7 @@
 .get.negloglik.dist.0 <- function(dat, dist, formals.dist, ndistparams, dist_call){
   
   function(x){
-    
+  
     n <- length(dat)
     dist_call <- get(paste("d", dist, sep = ""))
     
@@ -152,8 +152,21 @@
   
   # cluster data into j groups
   cluster.vec <- clara(dat, j, rngR = TRUE, pamLike = TRUE, medoids.x = FALSE)$clustering
+  groups <- mapply(function(i){sum(abs(cluster.vec - i) <= .Machine$double.eps)}, 1:j)
+  
+  # check that each group has at least 2 observations
+  if(any(groups == 1)){
+    ind <- which(groups == 1)
+    for(i in ind){
+      distance <- abs(dat[cluster.vec == i] - dat)
+      distance[distance == 0] <- max(distance)
+      closest <- which(distance == min(distance))
+      cluster.vec[closest] <- i
+    }
+  }
+  
   # initial weights proportional to number of observations in each cluster
-  initial <- (mapply(function(i){sum(cluster.vec == i)}, 1:j)/length(cluster.vec))[-j]
+  initial <- (mapply(function(i){sum(abs(cluster.vec - i) <= .Machine$double.eps)}, 1:j)/length(cluster.vec))[-j]
   
   if(!is.null(MLE.function)){
     
