@@ -182,9 +182,16 @@
     likelihood0list <- mapply(function(i){.get.negloglik.dist.0(dat[cluster.vec == i], 
                                                                 dist, formals.dist, ndistparams, 
                                                                 dist_call)}, 1:j)
-    init.mat <- mapply(function(i){solnp(init, likelihood0list[[i]], LB = lower, UB = upper, 
-                                         control= c(trace = 0))$pars}, 1:j)
     
+    # solnp at times has a hard time converging if some groups have very few observations:
+    # stopping criteria
+    setTimeLimit(cpu = 10, elapsed = 10, transient = TRUE)
+    on.exit(setTimeLimit(cpu = Inf, elapsed = Inf, transient = FALSE))
+    env <- environment()
+    tryCatch(
+      init.mat <- mapply(function(i){solnp(init, likelihood0list[[i]], LB = lower, UB = upper, 
+                                           control = c(trace = 0))$pars}, 1:j),
+      error = function(e) assign("init.mat", rep(init, j), envir = env))
   }
   
   initial.theta <- as.vector(t(init.mat))
