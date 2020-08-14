@@ -56,7 +56,7 @@ To calculate the minimum of the L2 distance (and the corresponding parameter val
 }
 
 \value{
-Object of class \code{paramEst} with the following attributes
+Object of class \code{paramEst} with the following attributes:
 
 \item{dat}{data based on which the complexity is estimated.}
 

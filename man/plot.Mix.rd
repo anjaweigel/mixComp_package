@@ -26,7 +26,7 @@
   
   \item{n}{number of points to generate if \code{xout} is unspecified (for continuous distributions).}
     
-  \item{type}{character denoting type of plot, see, e.g. \code{\link[graphics]{lines}}. Defaults to \code{"l"} if the mixture distribution is continuous and to \code{"h"} otherwise.}
+  \item{type}{character denoting the type of plot, see e.g. \code{\link[graphics]{lines}}. Defaults to \code{"l"} if the mixture distribution is continuous and to \code{"h"} otherwise.}
     
   \item{xlab,ylab}{labels for the x and y axis with defaults.}
   
@@ -34,7 +34,7 @@
 
   \item{lwd}{line width for plotting with a non-standard default.}
   
-  \item{log}{logical; if \code{TRUE}, probabilities/densities \eqn{p} are plotted as \eqn{log(p)}. Only works if \code{components} is set to \code{false}.}
+  \item{log}{logical; if \code{TRUE}, probabilities/densities \eqn{f} are plotted as \eqn{log(f)}. Only works if \code{components} is set to \code{FALSE}.}
   
   \item{h0}{logical indicating whether the line \eqn{y = 0} should be drawn.}
   

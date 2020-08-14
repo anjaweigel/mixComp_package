@@ -40,7 +40,7 @@ The MLEs are calculated via the \code{MLE.function} attribute (of the \code{datM
 }
 
 \value{
-Object of class \code{paramEst} with the following attributes
+Object of class \code{paramEst} with the following attributes:
 
 \item{dat}{data based on which the complexity is estimated.}
 

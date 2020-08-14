@@ -8,7 +8,7 @@ Create Object for Which to Estimate the Mixture Complexity
 }
 
 \description{
-Function to generate a \code{datMix} object to be passed to other \code{mixcomp} functions used for estimating the mixture complexity.
+Function to generate a \code{datMix} object to be passed to other \code{mixComp} functions used for estimating the mixture complexity.
 }
 
 \usage{
@@ -27,7 +27,7 @@ is.datMix(x)
     
   \item{theta.bound.list}{a named list specifying the upper and the lower bound for the component parameters. The names of the list elements have to match the names of the formal arguments of the functions \code{ddist} and \code{rdist} exactly. For a gaussian mixture, the list elements would have to be named \code{mean} and \code{sd}, as these are the formal arguments used by \code{rnorm} and \code{dnorm}. Has to be supplied if a method that estimates the component weights and parameters is to be used.}
   
-  \item{MLE.function}{function (or list of functions) which takes as input the data and gives as output the maximum likelihood estimator for the parameter(s) of a one component mixture (i.e. the standard MLE of the component distribution \code{dist}).  If the component distribution has more than one parameter, a list of functions has to be supplied and the order of the MLE functions has to match the order of the component parameters in \code{theta.bound.list} (e.g. for a normal mixture, if the first entry of \code{theta.bound.list} is the bounds of the mean, then then first entry of \code{MLE.function} has to be the MLE of the mean). If this argument is supplied and the \code{datMix} object is handed over to a complexity estimation procedure relying on optimizing over a likelihood function, the \code{MLE.function} attribute will be used for the single component case. In case the objective function is either not a likelihood or corresponds to a mixture with more than 1 component, numerical optimization will be used based on \code{\link{Rsolnp}}'s function \code{solnp}, but \code{MLE.function} will be used to calculate the initial values passed to \code{solnp}. Specifying \code{MLE.function} is optional and if it is not, for example because the MLE solution does not exists in closed form, numerical optimization is used to find the relevant MLE's.}
+  \item{MLE.function}{function (or list of functions) which takes as input the data and gives as output the maximum likelihood estimator for the parameter(s) of a one component mixture (i.e. the standard MLE of the component distribution \code{dist}).  If the component distribution has more than one parameter, a list of functions has to be supplied and the order of the MLE functions has to match the order of the component parameters in \code{theta.bound.list} (e.g. for a normal mixture, if the first entry of \code{theta.bound.list} is the bounds of the mean, then then first entry of \code{MLE.function} has to be the MLE of the mean). If this argument is supplied and the \code{datMix} object is handed over to a complexity estimation procedure relying on optimizing over a likelihood function, the \code{MLE.function} attribute will be used for the single component case. In case the objective function is either not a likelihood or corresponds to a mixture with more than 1 components, numerical optimization will be used based on \code{\link{Rsolnp}}'s function \code{solnp}, but \code{MLE.function} will be used to calculate the initial values passed to \code{solnp}. Specifying \code{MLE.function} is optional and if it is not, for example because the MLE solution does not exists in closed form, numerical optimization is used to find the relevant MLE's.}
 
   \item{Hankel.method}{character string in \code{c("explicit", "translation", "scale")},  specifying the method of estimating the moments of the mixing distribution used to calculate the relevant Hankel matrix. Has to be specified when using \code{nonparamHankel}, \code{paramHankel} or \code{paramHankel.scaled}. For further details see below.}
   
@@ -55,7 +55,7 @@ If the \code{datMix} object is supposed to be passed to a function that calculat
                                                
 If the \code{datMix} object is supposed to be passed to a function that estimates the component weights and parameters (i.e. all but \code{\link{nonparamHankel}}), the argument \code{theta.bound.list} has to be specified, and \code{MLE.function} will be used in the estimation process if it is supplied (otherwise the MLE is found numerically).
 
-Note that the \code{datMix} function will the random number generator (RNG) state.
+Note that the \code{datMix} function will change the random number generator (RNG) state.
 }
 
 \value{
@@ -70,7 +70,7 @@ see above):
 }
 
 \seealso{
-\code{\link{RtoDat}} for the conversion of \code{RMix} to \code{datMix} objects.
+\code{\link{RtoDat}} for the conversion of \code{rMix} to \code{datMix} objects.
 }
 
 \examples{

@@ -34,7 +34,7 @@ is.rMix(x)
 }
 
 \details{
-For a mixture of \eqn{p} components, generate the number of observations in each component as multinomial, and then use a standard random variate generation function for each component. The integer (multinomial) numbers are generated via \code{\link[base]{sample}}.
+For a mixture of \eqn{p} components, generate the number of observations in each component as multinomial, and then use an implemented random variate generation function for each component. The integer (multinomial) numbers are generated via \code{\link[base]{sample}}.
 }
 
 \value{
@@ -49,7 +49,9 @@ see \code{\link{Mix}}):
 }
 
 \seealso{
-\code{\link{dMix}} for the density and \code{\link{Mix}} for the construction of \code{Mix} objects.
+\code{\link{dMix}} for the density, 
+\code{\link{Mix}} for the construction of \code{Mix} objects and
+\code{\link{plot.rMix}} for the plot method.
 }
 
 \examples{

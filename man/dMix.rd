@@ -18,8 +18,7 @@ dMix(x, obj, log = FALSE)
 
   \item{obj}{object of class \code{Mix}.}
   
-  \item{log}{logical; if \code{TRUE}, probabilities/densities \eqn{p} are returned as 
-    \eqn{log(p)}.}
+  \item{log}{logical; if \code{TRUE}, probabilities/densities \eqn{f} are returned as \eqn{log(f)}.}
 }
 
 \value{

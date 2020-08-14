@@ -17,7 +17,7 @@ nonparamHankel(obj, j.max = 10, pen.function = NULL, scaled = FALSE,
 
 \method{print}{hankDet}(x, ...)
 
-\method{plot}{hankDet}(x, type = "b", xlab = "p", ylab = NULL, mar = NULL, 
+\method{plot}{hankDet}(x, type = "b", xlab = "j", ylab = NULL, mar = NULL, 
      ylim = c(min(0, min(obj)), max(obj)), ...)
 }
 
@@ -26,11 +26,11 @@ nonparamHankel(obj, j.max = 10, pen.function = NULL, scaled = FALSE,
     
     \item{j.max}{integer specifying the maximal number of components to be considered.}
     
-    \item{pen.function}{a function with arguments \code{j} and \code{n} specifying the penalty added to the determinant value given sample size \eqn{n} and the currently assumed complexity \eqn{j}. If left empty no penalty will be added. If non-empty and \code{scaled} is true, the penalty function will be added after the determinants are scaled.}
+    \item{pen.function}{a function with arguments \code{j} and \code{n} specifying the penalty added to the determinant value given sample size \eqn{n} and the currently assumed complexity \eqn{j}. If left empty no penalty will be added. If non-empty and \code{scaled} is \code{TRUE}, the penalty function will be added after the determinants are scaled.}
     
     \item{scaled}{logical specifying whether the vector of estimated determinants should be scaled.}
                   
-    \item{B}{integer specifying the number of bootstrap replicates used for scaling of the determinants. Ignored if \code{scaled} is false.}
+    \item{B}{integer specifying the number of bootstrap replicates used for scaling of the determinants. Ignored if \code{scaled} is \code{FALSE}.}
       
   \item{x}{object of class \code{hankDet}.}    
       
@@ -44,7 +44,7 @@ nonparamHankel(obj, j.max = 10, pen.function = NULL, scaled = FALSE,
   
   \item{\dots}{
     \describe{
-      \item{in \code{nonparamHankel()}:}{further arguments passed to the \code{\link[boot]{boot}} function if \code{scaled} is true.}
+      \item{in \code{nonparamHankel()}:}{further arguments passed to the \code{\link[boot]{boot}} function if \code{scaled} is \code{TRUE}.}
       \item{in \code{plot.hankDet()}:}{further arguments passed to \code{\link[base]{plot}}.}
       \item{in \code{print.hankDet()}:}{further arguments passed to \code{\link[base]{print}}.}
     }}
@@ -65,7 +65,7 @@ For a thorough discussion of the methods that can be used for the estimation of 
 }
 
 \value{
-Vector of estimated determinants (optionally scaled and/or penalized), given back as an object of class \code{hankDet} with the following attributes:
+The vector of estimated determinants (optionally scaled and/or penalized), given back as an object of class \code{hankDet} with the following attributes:
 \item{scaled}{logical indicating whether the determinants are scaled.}
 \item{pen }{logical indicating whether a penalty was added to the determinants.}
 \item{dist }{character string stating the (abbreviated) name of the component distribution, such that the function \code{ddist} evaluates its density function and \code{rdist} generates random numbers.}

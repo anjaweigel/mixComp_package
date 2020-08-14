@@ -35,11 +35,14 @@ is.Mix(x)
       \item{in \code{print.Mix()}:}{object of class \code{Mix}.}
   }}
 
-  \item{\dots}{further arguments passed to the print method.}
+  \item{\dots}{\describe{
+      \item{in \code{Mix()}:}{alternative way of supplying the component parameters (instead of using \code{theta.list}).}
+      \item{in \code{print.Mix()}:}{further arguments passed to the print method.}
+  }}
 }  
 
 \details{
-Note that the \code{Mix} function will the random number generator (RNG) state.
+Note that the \code{Mix} function will change the random number generator (RNG) state.
 }
 
 \value{
