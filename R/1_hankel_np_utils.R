@@ -386,7 +386,7 @@ print.hankDet <- function(x, ...){
 
 ## Purpose: plot method for "hankDet" objects
 
-plot.hankDet <- function(x, type = "b", xlab = "p",  ylab = NULL, mar = NULL,
+plot.hankDet <- function(x, type = "b", xlab = "j",  ylab = NULL, mar = NULL,
                          ylim = c(min(0, min(obj)), max(obj)), ...){
   
   obj <- x

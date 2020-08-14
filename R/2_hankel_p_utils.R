@@ -149,7 +149,7 @@
 
 .get.initialvals <- function(dat, j, ndistparams, MLE.function = NULL, lower, upper, dist,
                              formals.dist, dist_call){
-  
+
   # cluster data into j groups
   cluster.vec <- clara(dat, j, rngR = TRUE, pamLike = TRUE, medoids.x = FALSE)$clustering
   groups <- mapply(function(i){sum(abs(cluster.vec - i) <= .Machine$double.eps)}, 1:j)

@@ -4,7 +4,7 @@
 
 ADAPkde <- function(dat, ndistparams, n, j, init, dist, formals.dist, dist_call,
                     sample.n, sample.plot, bs_iter = NULL){
-
+ 
   if(j == 1) w <- 1 
   else w <- c(init[1:(j - 1)], 1 - sum(init[1:(j - 1)]))
   
@@ -167,7 +167,7 @@ ADAPkde <- function(dat, ndistparams, n, j, init, dist, formals.dist, dist_call,
   theta.list <- split(unname(theta), names(theta))
   Mix.obj <- Mix(dist, w = w, theta.list = theta.list)
   
-  objective <- try(integrate(function(x){sqrt(dMix(x, Mix.obj) * kde(x))}, -Inf, Inf,
+  objective <- try(integrate(function(x){sqrt(suppressWarnings(dMix(x, Mix.obj)) * kde(x))}, -Inf, Inf,
                              subdivisions = 1000L)[[1]], silent = TRUE)
   if(inherits(objective, "try-error")){
     cat(" Error while calculating the value of the true objective function. \n Returning the value of the approximated objective function instead. \n")
@@ -556,7 +556,7 @@ hellinger.boot.cont <- function(obj, bandwidth, j.max = 10, B = 100, ql = 0.025,
         }
 
       }
-      
+
       kdevals <- kde(sample)
       
       if(j0 > 1){ # need to include weight restrictions in optimization

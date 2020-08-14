@@ -111,7 +111,7 @@ L2.disc <- function(obj, j.max = 10, n.inf = 1000, threshold = "SBC", control = 
   j0 <- 0 
   
   repeat{
-    
+  
     j0 <- j0 + 1 # current complexity estimate
     j1 <- j0 + 1
     

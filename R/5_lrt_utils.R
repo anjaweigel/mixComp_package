@@ -117,7 +117,7 @@ mix.lrt <- function(obj, j.max = 10, B = 100, quantile = 0.95, control = c(trace
                   " components.\n", sep = ""))
         
       } else cat(paste("\n")) 
-      
+
       # in the bootstrap we have to calculate the values for j0 and j1 as the bootstrap
       # data changes in every iteration (cannot reuse last j1 values as j0)
       
