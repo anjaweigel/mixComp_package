@@ -2,18 +2,13 @@ Package: mixComp
 Version: 0.0-1
 Title: Estimation of the Order of Mixture Distributions
 Description: Different estimation methods for the order of a mixture model.
-Authors@R: c(person(given = "Anja", family = "Weigel", role = "aut", 
-                    email = "anja.weigel@yahoo.de"),
-             person(given = "Yulia", family = "Kulagina", role = c("aut", "cre"), 
-                    email = "yulia.kulagina@stat.math.ethz.ch"),
-             person(given = "Fadoua", family = "Balabdaoui", role = c("aut", "ths"),  
-                    email = "fadoua.balabdaoui@stat.math.ethz.ch"),   
-             person(given = "Lilian", family = "Mueller", role = "ctb",
-                    email = "lilian.mueller@gmail.com"),   
-             person(given = "Martin", family = "Maechler", role = "ctb",
-                    comment = c("package 'nor1mix' as model", ORCID = "0000-0002-8685-9910"))     
+Authors@R: c(person(given = "Anja", family = "Weigel", role = "aut", email = "anja.weigel@yahoo.de"),
+             person(given = "Yulia", family = "Kulagina", role = c("aut", "cre"), email = "yulia.kulagina@stat.math.ethz.ch"),
+             person(given = "Fadoua", family = "Balabdaoui", role = c("aut", "ths"), email = "fadoua.balabdaoui@stat.math.ethz.ch"),   
+             person(given = "Lilian", family = "Mueller", role = "ctb", email = "lilian.mueller@gmail.com"),   
+             person(given = "Martin", family = "Maechler", role = "ctb", comment = c("package 'nor1mix' as model", ORCID = "0000-0002-8685-9910"))     
             )
 Maintainer: Yulia Kulagina <yulia.kulagina@stat.math.ethz.ch>
-Author: Anja Weigel [aut], Yulia Kulagina [aut, cre], Fadoua Balabdaoui [aut, ths]
+Author: Anja Weigel [aut], Yulia Kulagina [aut, cre], Fadoua Balabdaoui [aut, ths],  Lilian Mueller [ctb], Martin Maechler [ctb] (package 'nor1mix' as model, <https://orcid.org/0000-0002-8685-9910>)
 Imports: cluster, boot, expm, matrixcalc, Rsolnp, kdensity
 License: GPL-3
