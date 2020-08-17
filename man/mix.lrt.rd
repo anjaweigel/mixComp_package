@@ -32,7 +32,7 @@ mix.lrt(obj, j.max = 10, B = 100, quantile = 0.95,
 Define the \eqn{complexity} of a finite mixture \eqn{F} as the smallest 
 integer \eqn{p}, such that its pdf/pmf \eqn{f} can be written as
 
-\eqn{f(x) = w_1*g(x;\theta _1) + \dots + w_p*g(x;\theta _p)}.
+\deqn{f(x) = w_1*g(x;\theta _1) + \dots + w_p*g(x;\theta _p).}
 
 To estimate \eqn{p}, \code{mix.lrt} sequentially tests \eqn{p = j} versus \eqn{p = j+1} for \eqn{j = 1,2, \dots}, by finding the maximum likelihood estimator (MLE) for the density of a mixture with \eqn{j} and \eqn{j+1} components and calculating the corresponding likelihood ratio test statistic (LRTS). Next, a parametric bootstrap procedure is used to generate \code{B} samples of size \eqn{n} from a \eqn{j}-component mixture given the previously calculated MLE. For each of the bootstrap samples, the MLEs corresponding to densities of mixtures with \eqn{j} and \eqn{j+1} components are calculated, as well as the LRTS. The null hypothesis \eqn{H_0: p = j} is rejected and \eqn{j} increased by 1 if the LRTS based on the original data is larger than the chosen \code{quantile} of its bootstrapped counterparts. Otherwise, \eqn{j} is returned as the complexity estimate. 
 
@@ -56,7 +56,7 @@ Object of class \code{paramEst} with the following attributes:
 
 \item{pars}{Say the complexity estimate is equal to some \eqn{j}. Then \code{pars} is a numeric vector of size \eqn{(d+1)*j-1} specifying the component weight and parameter estimates, given as 
 
-\eqn{(w_1, ... w_{j-1}, \theta 1_1, ... \theta 1_j, \theta 2_1, ... \theta d_j)}.}
+\deqn{(w_1, ... w_{j-1}, \theta 1_1, ... \theta 1_j, \theta 2_1, ... \theta d_j).}}
 
 \item{values}{numeric vector of function values gone through during optimization at iteration \eqn{j}, the last entry being the value at the optimum.}
 
@@ -105,9 +105,10 @@ normLoc.dM <- RtoDat(normLocRMix, theta.bound.list = norm.bound.list,
                 
                       
 ### complexity and parameter estimation 
+\dontrun{
 set.seed(0)
 res <- mix.lrt(normLoc.dM, B = 30)
-plot(res)
+plot(res)}
 }
 
 \keyword{cluster}

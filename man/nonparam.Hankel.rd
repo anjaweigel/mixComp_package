@@ -53,7 +53,7 @@ nonparamHankel(obj, j.max = 10, pen.function = NULL, scaled = FALSE,
 \details{
 Define the \eqn{complexity} of a finite mixture \eqn{F} as the smallest integer \eqn{p}, such that its pdf/pmf \eqn{f} can be written as
 
-\eqn{f(x) = w_1*g(x;\theta _1) + \dots + w_p*g(x;\theta _p)}.
+\deqn{f(x) = w_1*g(x;\theta _1) + \dots + w_p*g(x;\theta _p).}
 
 \code{nonparamHankel} estimates \eqn{p} by iteratively increasing the assumed complexity \eqn{j} and calculating the determinant of the \eqn{(j+1)}x\eqn{(j+1)} Hankel matrix made up of the first \eqn{2j} raw moments of the mixing distribution. As shown by Dacunha-Castelle & Gassiat (1997), once the correct complexity is reached (i.e. for all \eqn{j >= p}), this determinant is zero. 
 
@@ -108,8 +108,8 @@ pen <- function(j, n){
 
 ## estimate determinants
 set.seed(1)
-geomdets_scaled <- nonparamHankel(geom.dM, scaled = TRUE, pen.function = pen, j.max = 5)
-plot(geomdets_scaled, main = "Three component geometric mixture")
+geomdets_pen <- nonparamHankel(geom.dM, pen.function = pen, j.max = 5)
+plot(geomdets_pen, main = "Three component geometric mixture")
 }
 
 \keyword{cluster}

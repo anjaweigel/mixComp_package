@@ -38,11 +38,11 @@ hellinger.boot.disc(obj, j.max = 10, B = 100, ql = 0.025, qu = 0.975,
 \details{
 Define the \eqn{complexity} of a finite discrete mixture \eqn{F} as the smallest integer \eqn{p}, such that its probability mass function (pmf) \eqn{f} can be written as
 
-\eqn{f(x) = w_1*g(x;\theta_1) + \dots + w_p*g(x;\theta_p)}.
+\deqn{f(x) = w_1*g(x;\theta_1) + \dots + w_p*g(x;\theta_p).}
 
 Further, let \eqn{g, f} be two probability mass functions. The squared Hellinger distance between \eqn{g} and \eqn{f} is given by
 
-\eqn{H^2(g,f) = \sum (\sqrt{g(x)}-\sqrt{f(x)})^2}
+\deqn{H^2(g,f) = \sum (\sqrt{g(x)}-\sqrt{f(x)})^2}
 
 where \eqn{\sqrt{g(x)}}, respectively \eqn{\sqrt{f(x)}} denotes the square root of the probability mass functions at point x.
 
@@ -70,7 +70,7 @@ Object of class \code{paramEst} with the following attributes:
 
 \item{pars}{Say the complexity estimate is equal to some \eqn{j}. Then \code{pars} is a numeric vector of size \eqn{(d+1)*j-1} specifying the component weight and parameter estimates, given as 
 
-\eqn{(w_1, ... w_{j-1}, \theta 1_1, ... \theta 1_j, \theta 2_1, ... \theta d_j)}.}
+\deqn{(w_1, ... w_{j-1}, \theta 1_1, ... \theta 1_j, \theta 2_1, ... \theta d_j).}}
 
 \item{values}{numeric vector of function values gone through during optimization at iteration \eqn{j}, the last entry being the value at the optimum.}
 
@@ -117,10 +117,6 @@ pois.dM <- RtoDat(poisRMix, theta.bound.list = poisList, MLE.function = MLE.pois
 ## complexity and parameter estimation 
 set.seed(0)
 res <- hellinger.disc(pois.dM)
-plot(res)
-
-set.seed(0)
-res <- hellinger.boot.disc(pois.dM, B = 30)
 plot(res)
 }
 

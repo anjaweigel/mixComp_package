@@ -42,11 +42,11 @@ L2.boot.disc(obj, j.max = 10, n.inf = 1000, B = 100,
 
 Define the \eqn{complexity} of a finite discrete mixture \eqn{F} as the smallest integer \eqn{p}, such that its probability mass function (pmf) \eqn{f} can be written as
 
-\eqn{f(x) = w_1*g(x;\theta_1) + \dots + w_p*g(x;\theta_p)}.
+\deqn{f(x) = w_1*g(x;\theta_1) + \dots + w_p*g(x;\theta_p).}
 
 Further, let \eqn{g, f} be two probability mass functions. The squared L2 distance between \eqn{g} and \eqn{f} is given by
 
-\eqn{L_2^2(g,f) = \sum(g(x)-f(x))^2}.
+\deqn{L_2^2(g,f) = \sum(g(x)-f(x))^2.}
 
 To estimate \eqn{p}, \code{L2.disc} iteratively increases the assumed complexity \eqn{j} and finds the ``best'' estimate for both, the pmf of a mixture with \eqn{j} and \eqn{j+1} components, by calculating the parameters that minimize the squared L2 distances to the empirical probability mass function. The infinite sum contained in the objective function will be approximated by a sum ranging from 0 to \code{n.inf}, set to 1000 by default. Once the ``best'' parameters have been obtained, the difference in squared distances is compared to a predefined \code{threshold}. If this difference is smaller than the threshold, the algorithm terminates and the true complexity is estimated as \eqn{j}, otherwise \eqn{j} is increased by 1 and the procedure is started over. The predefined thresholds are the \code{"LIC"} given by \eqn{(0.6*log((j+1)/j))/n} and the \code{"SBC"} given by \eqn{(0.6*log(n)*log((j+1)/j))/n}, \eqn{n} being the sample size. Note that, if a customized function is to be used, it may only take the arguments \code{j} and \code{n}.
 
@@ -72,7 +72,7 @@ Object of class \code{paramEst} with the following attributes:
 
 \item{pars}{Say the complexity estimate is equal to some \eqn{j}. Then \code{pars} is a numeric vector of size \eqn{(d+1)*j-1} specifying the component weight and parameter estimates, given as 
 
-\eqn{(w_1, ... w_{j-1}, \theta 1_1, ... \theta 1_j, \theta 2_1, ... \theta d_j)}.}
+\deqn{(w_1, ... w_{j-1}, \theta 1_1, ... \theta 1_j, \theta 2_1, ... \theta d_j).}}
 
 \item{values}{numeric vector of function values gone through during optimization at iteration \eqn{j}, the last entry being the value at the optimum.}
 

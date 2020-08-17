@@ -27,6 +27,7 @@ RtoDat(obj, theta.bound.list = NULL, MLE.function = NULL, Hankel.method = NULL,
 }
 
 \value{
+
 An object of class \code{datMix} with the following attributes (for further explanations
 see \code{\link{datMix}}):
   \item{dist}{}

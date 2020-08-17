@@ -58,7 +58,7 @@ paramHankel.scaled(obj, j.max = 10, B = 100, ql = 0.025,
 \details{
 Define \eqn{complexity} of a finite mixture \eqn{F} as the smallest integer \eqn{p}, such that its pdf/pmf \eqn{f} can be written as
 
-\eqn{f(x) = w_1*g(x;\theta _1) + \dots + w_p*g(x;\theta _p)}.
+\deqn{f(x) = w_1*g(x;\theta _1) + \dots + w_p*g(x;\theta _p).}
 
 The \code{paramHankel} procedure initially assumes the mixture to only contain a single component, setting \eqn{j = 1}, and then sequentially tests \eqn{p = j} versus \eqn{p = j+1} for \eqn{j = 1,2, \dots}, until the algorithm terminates. To do so, it determines the MLE for a \eqn{j}-component mixture, generates \code{B} parametric bootstrap samples of size \eqn{n} from the distribution the MLE corresponds to and calculates \code{B} determinants of the corresponding \eqn{(j+1)x(j+1)} Hankel matrices of the first \eqn{2j} raw moments of the mixing distribution (for details see \code{\link{nonparamHankel}}). The null hypothesis \eqn{H_0: p = j} is rejected and \eqn{j} increased by 1 if the determinant value based on the original data lies outside of the interval \eqn{[ql, qu]}, a range specified by the \code{ql} and \code{qu} empirical quantiles of the bootstrapped determinants. Otherwise, \eqn{j} is returned as the complexity estimate. 
 
@@ -84,7 +84,7 @@ Object of class \code{paramEst} with the following attributes:
 
 \item{pars}{Say the complexity estimate is equal to some \eqn{j}. Then \code{pars} is a numeric vector of size \eqn{(d+1)*j-1} specifying the component weight and parameter estimates, given as 
 
-\eqn{(w_1, ... w_{j-1}, \theta 1_1, ... \theta 1_j, \theta 2_1, ... \theta d_j)}.}
+\deqn{(w_1, ... w_{j-1}, \theta 1_1, ... \theta 1_j, \theta 2_1, ... \theta d_j).}}
 
 \item{values}{numeric vector of function values gone through during optimization at iteration \eqn{j}, the last entry being the value at the optimum.}
 

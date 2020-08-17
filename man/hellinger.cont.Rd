@@ -46,17 +46,17 @@ hellinger.boot.cont(obj, bandwidth, j.max = 10, B = 100, ql = 0.025,
 
 Define the \eqn{complexity} of a finite continuous mixture \eqn{F} as the smallest integer \eqn{p}, such that its probability density function (pdf) \eqn{f} can be written as
 
-\eqn{f(x) = w_1*g(x;\theta_1) + \dots + w_p*g(x;\theta_p)}.
+\deqn{f(x) = w_1*g(x;\theta_1) + \dots + w_p*g(x;\theta_p).}
 
 Further, let \eqn{g, f} be two probability density functions. The squared Hellinger distance between \eqn{g} and \eqn{f} is given by
 
-\eqn{H^2(g,f) = \int (\sqrt{g(x)}-\sqrt{f(x)})^2 = 2 - 2\int\sqrt{f(x)}\sqrt{g(x)}}
+\deqn{H^2(g,f) = \int (\sqrt{g(x)}-\sqrt{f(x)})^2 = 2 - 2\int\sqrt{f(x)}\sqrt{g(x)}}
 
 where \eqn{\sqrt{g(x)}}, respectively \eqn{\sqrt{f(x)}} denotes the square root of the probability density functions at point x.
 
 To estimate \eqn{p}, \code{hellinger.cont} iteratively increases the assumed complexity \eqn{j} and finds the ``best'' estimate for both, the pdf of a mixture with \eqn{j} and \eqn{j+1} components, ideally by calculating the parameters that minimize the squared Hellinger distances to a kernel density estimate.  Since the computational burden of optimizing over an integral to find the ``best'' component weights and parameters is immense, the algorithm approximates the objective function by sampling \code{sample.n} observations \eqn{Y_i} from the kernel density estimate and using
 
-\eqn{2 - 2\sum \sqrt{f(Y_i)} / \sqrt{g(Y_i)}}
+\deqn{2 - 2\sum \sqrt{f(Y_i)} / \sqrt{g(Y_i)}}
 
 instead, with \eqn{f} being the mixture density and \eqn{g} being the kernel density estimate. Once the ``best'' parameters have been obtained, the difference in squared distances is compared to a predefined \code{threshold}. If this difference is smaller than the threshold, the algorithm terminates and the true complexity is estimated as \eqn{j}, otherwise \eqn{j} is increased by 1 and the procedure is started over. The predefined thresholds are the \code{"AIC"} given by \eqn{(d+1)/n} and the \code{"SBC"} given by \eqn{((d+1)log(n))/(2n)}, \eqn{n} being the sample size and \eqn{d} the number of component parameters, i.e. \eqn{\theta \subseteq R^d}. Note that, if a customized function is to be used, it may only take the arguments \code{j} and \code{n}, so if the user wants to include the number of component parameters \eqn{d}, it has to be entered explicitly.
 
@@ -82,7 +82,7 @@ Object of class \code{paramEst} with the following attributes:
 
 \item{pars}{Say the complexity estimate is equal to some \eqn{j}. Then \code{pars} is a numeric vector of size \eqn{(d+1)*j-1} specifying the component weight and parameter estimates, given as 
 
-\eqn{(w_1, ... w_{j-1}, \theta 1_1, ... \theta 1_j, \theta 2_1, ... \theta d_j)}.}
+\deqn{(w_1, ... w_{j-1}, \theta 1_1, ... \theta 1_j, \theta 2_1, ... \theta d_j).}}
 
 \item{values}{numeric vector of function values gone through during optimization at iteration \eqn{j}, the last entry being the value at the optimum.}
 
@@ -137,9 +137,11 @@ normLoc.dM <- RtoDat(normLocRMix, theta.bound.list = norm.bound.list,
 
 
 ### complexity and parameter estimation 
+\dontrun{
 set.seed(0)
 res <- hellinger.cont(normLoc.dM, bandwidth = 0.5, sample.n = 5000)
 plot(res)
+}
 }
 
 \keyword{cluster}
