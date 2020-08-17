@@ -1,8 +1,7 @@
+%\VignetteIndexEntry{Estimating the Complexity of a Finite Mixture with the R Package mixComp}
 \documentclass[nojss]{jss}
 
 %% -- LaTeX packages and custom commands ---------------------------------------
-%%\VignetteIndexEntry{Introduction to finite mixture models and mixComp}
-
 
 %% recommended packages
 \usepackage{thumbpdf,lmodern}
@@ -125,7 +124,7 @@ This paper discusses the various categories of functions found in the \pkg{mixCo
 
 Two main features distinguish this package from other mixture-related \proglang{R} \citep{R} packages: First, it is focused on estimation of the complexity rather than the component weights and parameters. While these are often estimated as a by-product, all methods contained in \pkg{mixComp} are based on theory specifically developed to consistently estimate the number of components. Second, it is applicable to parametric mixtures well beyond those whose component distributions are included in the \pkg{stats} package, making it more customizable than most packages for model-based clustering. 
 
-The packages \pkg{mixtools} \citep{mixtools} and \pkg{flexmix} \citep{flexmix1, flexmix2, flexmix3} should both be mentioned at this point: Aside from \pkg{mixtools}'s focus on mixture-of-regressions and non-parametric mixtures which are less relevant to this package, it is widely used to fit (multivariate) normal, multinomial or gamma mixtures with the EM algorithm. Notably, it also contains routines for selecting the number of components based on information criteria and parametric bootstrapping of the likelihood ratio test statistic values. However, they are limited to multinomial and (a variety of) normal mixtures as well as mixtures-of-regressions. Second, while \pkg{flexmix} was developed to deal with mixtures-of-regression, it sets itself apart from other packages by its extensibility, a design principle that we also aimed for when creating the \pkg{mixComp} package. Other widely used packages dealing with mixture models are \pkg{mclust} \citep{mclust}, which fits mixtures of Gaussians using the EM algorithm, and \pkg{mixdist} \cite{mixdist}, which is used for grouped conditional data. Interested readers can find a comprehensive list of mixture-related packages on the CRAN Task View: Cluster Analysis & Finite Mixture Models website.
+The packages \pkg{mixtools} \citep{mixtools} and \pkg{flexmix} \citep{flexmix1, flexmix2, flexmix3} should both be mentioned at this point: Aside from \pkg{mixtools}'s focus on mixture-of-regressions and non-parametric mixtures which are less relevant to this package, it is widely used to fit (multivariate) normal, multinomial or gamma mixtures with the EM algorithm. Notably, it also contains routines for selecting the number of components based on information criteria and parametric bootstrapping of the likelihood ratio test statistic values. However, they are limited to multinomial and (a variety of) normal mixtures as well as mixtures-of-regressions. Second, while \pkg{flexmix} was developed to deal with mixtures-of-regression, it sets itself apart from other packages by its extensibility, a design principle that we also aimed for when creating the \pkg{mixComp} package. Other widely used packages dealing with mixture models are \pkg{mclust} \citep{mclust}, which fits mixtures of Gaussians using the EM algorithm, and \pkg{mixdist} \citep{mixdist}, which is used for grouped conditional data. Interested readers can find a comprehensive list of mixture-related packages on the CRAN Task View: Cluster Analysis \& Finite Mixture Models website.
 
 
 
@@ -140,7 +139,6 @@ The packages \pkg{mixtools} \citep{mixtools} and \pkg{flexmix} \citep{flexmix1, 
 %%   (e.g., a function synopsis or list of arguments), the environment {Code}
 %%   is recommended. Alternatively, a plain {verbatim} can also be used.
 %%   (For executed code see the next section.)
-
 \section[Objects and functions defined in mixComp]{Objects and functions defined in \pkg{mixComp}}
 \label{sec:objects}
 
@@ -178,7 +176,6 @@ Object class & Created via & Description \\
 
 Table~\ref{tab:objects} depicts the five object classes defined in \pkg{mixComp}. The first two respectively represent a finite mixture distribution and a random sample drawn from such a distribution. The \code{Mix} object is printed as a matrix of component weights and parameters and is plotted as the density of the specified mixture, showing the overall as well as the component densities. The \code{rMix} object prints as the vector of observations and plots as a histogram, showcasing the individual components as well as the full sample. Both objects contain a number of attributes giving additional information, details of which can be found in the corresponding \proglang{R} help files. 
 
-\newpage
 The generation of an object of class \code{Mix} hinges on three central arguments: a string \code{dist} specifying the name of the family of component densities (or kernels) $\{g(x;\theta):\theta \in \Theta \}$, a vector \code{w} giving the weights $w_i$ and a list \code{theta.list}\footnote{The component parameters can also be supplied via the \code{...} argument.} containing the parameters of the component densities $\theta_i, i \in 1, \dots, p$. While the creation of \code{Mix} objects is mostly straightforward, two things should be noted in this regard: First, the \pkg{mixComp} procedures will search for functions called ``r\code{dist}'' and ``d\code{dist}'' in the accessible namespaces. For most ``standard'' distributions, these functions are contained in the \pkg{stats} package and do not need to be user-written (compare with Section~\ref{sec:non-standard}). To make use of these functions, it is essential that the string \code{dist} is named correctly (e.g. to create a gaussian mixture on the basis of the \pkg{stats} package, \code{dist} has to be specified as \code{norm} instead of \code{normal}, \code{gaussian} etc. for the package to find the functions \code{dnorm} and \code{rnorm}). Second, the names of the list elements of \code{theta.list} \footnote{or the names of the \code{...} arguments} have to match the names of the formal arguments of the functions ``d\code{dist}'' and ``r\code{dist}'' exactly (e.g. for a gaussian mixture, the list elements have to be named \code{mean} and \code{sd}, as these are the formal arguments used by \code{rnorm} and \code{dnorm}).
 
 <<Mix>>=
@@ -236,7 +233,7 @@ dev.off()
 \end{figure}
 
 
-
+\newpage
 The third object class shown in Table~\ref{tab:objects}, called \code{datMix}, represents the data vector $\textbf{X} $ based on which the mixture complexity is supposed to be estimated. These objects are most central to the package, as every procedure estimating the order of a mixture takes a \code{datMix} object as input. Apart from $\mathbf{X}$, it contains other ``static'' information needed for the estimation procedure (in contrast to ``tuning parameters'', which can be changed with every function call. An example of such a tuning parameter is the number of bootstrap replicates for a function employing a bootstrap procedure). A brief overview of which ``static'' attributes need to be supplied for each complexity estimation routine is given in Table~\ref{tab:inputs}. 
 
 \begin{table}[h]
@@ -414,7 +411,7 @@ With this general framework in place, the computation now merely hinges on calcu
 \newline
 This method can be applied when a closed form expression for estimates of the moments of the mixing distribution exists. \code{Hankel.function} then contains the function explicitly estimating $\textbf{c}^{2j+1}$. 
 
-As an example, consider a mixture of geometric distributions, where it can be shown that\footnote{This expression is called $c^{2j+1}_j$ only for notational consisteny; the RHS is simply a closed-form expression for the $j$^{th} moment of the mixing distribution of a geometric mixture.}
+As an example, consider a mixture of geometric distributions, where it can be shown that\footnote{This expression is called $c^{2j+1}_j$ only for notational consisteny; the RHS is simply a closed-form expression for the $j^{th}$ moment of the mixing distribution of a geometric mixture.}
 
 $$c^{2j+1}_j = 1 - \sum_{l = 0}^{j-1} f(l) = 1 - F(j-1),$$
 
@@ -543,6 +540,7 @@ As the preceding example shows, it can be quite difficult to determine the order
 \code{paramHankel.scaled} functions similarly to \code{paramHankel} with the exception that the bootstrapped determinants are scaled by the empirical standard deviation of the bootstrap sample. To scale the original determinant, \code{B} nonparametric bootstrap samples of size $n$ are generated from the data, the corresponding determinants are calculated and their empirical standard deviation is used.
 
 As seen below, \code{paramHankel} correctly identifies the data as having been generated by a $3$-component mixture (compare with Figure~\ref{hankelpplot}).
+\newpage
 <<hankelp2, results = hide>>=
 MLE.geom <- function(dat){
   1/(mean(dat)+1)
@@ -688,7 +686,7 @@ where $p$ is the true complexity (compare with \citet[p.~4253, Proof of the Theo
 $$D(\hat{f}_p, \tilde{f}_n) - D(\hat{f}_{p+1}, \tilde{f}_n) = o_p(t(j,n)).$$
 
 Both the LIC and the AIC as well as the SBC in the continuous case do not satisfy this condition, yet they are still part of the package for two reasons: First, since they were used in the original papers, they are included for the sake of completeness and reproducibility of original results. Second, consistency is an asymptotic property, and while the aforementioned thresholds do not fulfill it, they still perform well (and not rarely better than consistent thresholds) for smaller sample sizes. In the example above, the number of components is correctly identified under the non-consistent AIC threshold. Nonetheless, the user will be warned when using one of non-consistent predefined thresholds.
-
+\newpage
 \code{Warning:\linebreak
 While being used in Woo \& Sriram's original paper, asymptotically, the \linebreak
 threshold `AIC' does not go to 0 slower than the difference in squared \linebreak
@@ -772,7 +770,7 @@ plot(res)
 \label{newdistplot}
 \end{figure}
 
-
+\newpage
 \section{Non-standard mixtures}
 \label{sec:non-standard}
 
@@ -856,7 +854,7 @@ print(res)
 <<newdistplot, fig=TRUE, eps=FALSE, height=4, width = 6>>=
 plot(res)
 @
-\caption{Plot of the estimate of the mixture density produced by \code{mix.lrt} given a sample from the 3-component normal mixture corresponding to $\mathbf{w} = (0.3, 0.4, 0.3)$, $\bm{\mu} = (10, 11, 13)$ and \linebreak $\bm{\sigma} = (0.5, 0.5, 0.5)$.}
+\caption{Plot of the estimate of the mixture density produced by \code{mix.lrt} given a sample from the 3-component normal mixture with $\mathbf{w} = (0.3, 0.4, 0.3)$, $\bm{\mu} = (10, 11, 13)$, $\bm{\sigma} = (0.5, 0.5, 0.5)$.}
 \label{newdistplot}
 \end{figure}
 
