@@ -185,13 +185,13 @@
     
     # solnp at times has a hard time converging if some groups have very few observations:
     # stopping criteria
-    setTimeLimit(cpu = 10, elapsed = 10, transient = TRUE)
+    setTimeLimit(cpu = 20, elapsed = 20, transient = TRUE)
     on.exit(setTimeLimit(cpu = Inf, elapsed = Inf, transient = FALSE))
     env <- environment()
     tryCatch(
       init.mat <- mapply(function(i){solnp(init, likelihood0list[[i]], LB = lower, UB = upper, 
                                            control = c(trace = 0))$pars}, 1:j),
-      error = function(e) assign("init.mat", rep(init, j), envir = env))
+      error = function(e) assign("init.mat", rep(init, each = j), envir = env))
   }
   
   initial.theta <- as.vector(t(init.mat))
