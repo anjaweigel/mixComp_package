@@ -5,10 +5,9 @@
 
 %% recommended packages
 \usepackage{thumbpdf,lmodern}
-\usepackage{amsmath, amssymb, graphicx, mathtools, bm, bbm}
-\usepackage{caption}
-\usepackage{threeparttable}
-\usepackage{tabularx, booktabs}
+\usepackage{amsmath, amssymb, mathtools, bm, bbm}
+\usepackage{tabularx}
+\usepackage{booktabs}
 \usepackage{graphicx, subfig} 
 
 
@@ -390,7 +389,7 @@ As an extension to simply adding a penalty term to the determinant, a scaling ap
 Instead of inspecting the vector $(\hat{d}_1, \dots, \hat{d}_{j_m})$, one could therefore also base the complexity analysis on a vector of scaled determinants, defined as
 
 \begin{equation}
-\hat{d}_{\text{scaled}}^{j_m} = \hat{\Sigma}^{-1/2}
+\hat{\textbf{d}}_{\text{scaled}}^{j_m} = \hat{\Sigma}^{-1/2}
     \begin{pmatrix}
     \hat{d}_1\\
     \vdots\\
@@ -471,10 +470,12 @@ As an example, consider a mixture of normal distributions with unknown mean and 
 $$
 m_j=
 \begin{cases}
-0 & \text{if } j \text{ uneven}\\
-(j-1)!! & \text{if } j \text{ even}
-.\end{cases}
+0 & \text{if } j \text{ odd},\\
+(j-1)!! & \text{if } j \text{ even}.
+\end{cases}
 $$
+
+\vspace{0.1cm}
 
 <<hankel.norm>>=
 mom.std.norm <- function(j){
@@ -633,7 +634,7 @@ $$\text{AIC} = \frac{d+1}{n} \quad \quad \text{and} \quad \quad \text{SBC} = \fr
 \item \code{hellinger.cont}
 \vspace{2mm}
 \newline
-Unlike the two preceding functions, this procedure is applicable to \textit{continuous} mixture models and uses a kernel density estimator (KDE) as $\tilde{f}_n$. Its \code{bandwidth} can be chosen by the user, or the adaptive KDE found in \citet[p.~1720, equation (2)]{adap} may be used by specifying \code{bandwidth = "adaptive"}. The calculations are based on the continuous version of the squared Hellinger distance, where the ``best'' estimate $(\hat{\mathbf{w}}^j, \hat{\bm{\theta}}^j) \in W_j \times \Theta_j$ for a given $j$ corresponds to
+Unlike the two preceding functions, this procedure is applicable to \textit{continuous} mixture models and uses a kernel density estimator (KDE) as $\tilde{f}_n$. Its \code{bandwidth} can be chosen by the user, or the adaptive KDE found in \citet[p.~1720, Equation 2]{adap} may be used by specifying \code{bandwidth = "adaptive"}. The calculations are based on the continuous version of the squared Hellinger distance, where the ``best'' estimate $(\hat{\mathbf{w}}^j, \hat{\bm{\theta}}^j) \in W_j \times \Theta_j$ for a given $j$ corresponds to
 
 \begin{equation}
 (\hat{\mathbf{w}}^j, \hat{\bm{\theta}}^j) = \argmin_{(\mathbf{w}, \bm{\theta})} H^2(f_{j, \mathbf{w}, \bm{\theta}}, \hat{f_n}) 
@@ -666,7 +667,7 @@ print(res)
 \setkeys{Gin}{width = 0.75\textwidth}
 \begin{figure}[!h]
   \centering
-<<hellinger.cont.plot, fig = TRUE, eps = FALSE, height = 4, width = 6>>=
+<<hellingercontplot, fig = TRUE, eps = FALSE, height = 4, width = 6>>=
 plot(res)
 @
 \caption{Plot of the mixture density estimated by \code{hellinger.cont}  given a sample from the 3-component normal mixture corresponding to $\mathbf{w} = (0.3, 0.4, 0.3)$, $\bm{\mu} = (10, 13, 17)$ and $\bm{\sigma} = (1, 1, 1)$.}
@@ -685,7 +686,7 @@ where $p$ is the true complexity (compare with \citet[p.~4253, Proof of the Theo
 
 $$D(\hat{f}_p, \tilde{f}_n) - D(\hat{f}_{p+1}, \tilde{f}_n) = o_p(t(j,n)).$$
 
-Both the LIC and the AIC as well as the SBC in the continuous case do not satisfy this condition, yet they are still part of the package for two reasons: First, since they were used in the original papers, they are included for the sake of completeness and reproducibility of original results. Second, consistency is an asymptotic property, and while the aforementioned thresholds do not fulfill it, they still perform well (and not rarely better than consistent thresholds) for smaller sample sizes. In the example above, the number of components is correctly identified under the non-consistent AIC threshold. Nonetheless, the user will be warned when using one of non-consistent predefined thresholds.
+Both the LIC and the AIC as well as the SBC in the continuous case do not satisfy this condition, yet they are still part of the package for two reasons: First, since they were used in the original papers, they are included for the sake of completeness and reproducibility of original results. Second, consistency is an asymptotic property, and while the aforementioned thresholds do not fulfill it, they still perform well (and not rarely better than consistent thresholds) for smaller sample sizes. In the example above, the number of components is correctly identified under the non-consistent AIC threshold. Nonetheless, the user will be warned when using one of the non-consistent predefined thresholds.
 \newpage
 \code{Warning:\linebreak
 While being used in Woo \& Sriram's original paper, asymptotically, the \linebreak
@@ -725,7 +726,7 @@ print(res)
 \setkeys{Gin}{width = 0.75\textwidth}
 \begin{figure}[!h]
   \centering
-<<hell.boot.plot, fig = TRUE, eps = FALSE, height = 4, width = 6>>=
+<<hellbootplot, fig = TRUE, eps = FALSE, height = 4, width = 6>>=
 plot(res)
 @
 \caption{Plot of the mixture density estimated by \code{hellinger.boot.disc} given a sample from the 3-component poisson mixture corresponding to $\mathbf{w} = (0.45, 0.45, 0.1)$ and $\bm{\lambda} = (1, 5, 10)$.}
@@ -763,7 +764,7 @@ print(res)
 \setkeys{Gin}{width=0.75\textwidth}
 \begin{figure}[!h]
   \centering
-<<mix.lrt.plot, fig = TRUE, eps = FALSE, height = 4, width = 6>>=
+<<mixlrtplot, fig = TRUE, eps = FALSE, height = 4, width = 6>>=
 plot(res)
 @
 \caption{Plot of the mixture density estimated by \code{mix.lrt} applied to the \code{waiting} variable of the Old Faithful dataset.}
@@ -800,11 +801,11 @@ norm0.5RMix <- rMix(1000, obj = norm0.5Mix)
 @
 
 <<Mixplot, echo = FALSE, results = hide>>=
-png("norm0.5Mix.png", width = 370, height = 250)
+png("norm05Mix.png", width = 370, height = 250)
 plot(norm0.5Mix)
 dev.off()
 
-png("norm0.5RMix.png", width = 370, height = 250)
+png("norm05RMix.png", width = 370, height = 250)
 plot(norm0.5RMix)
 dev.off()
 @
@@ -812,8 +813,8 @@ dev.off()
 \setkeys{Gin}{width=0.49\textwidth}
 \begin{figure}[!h]
   \centering
-  \includegraphics[width=0.49\textwidth]{norm0.5Mix}
-  \includegraphics[width=0.49\textwidth]{norm0.5RMix}
+  \includegraphics[width=0.49\textwidth]{norm05Mix}
+  \includegraphics[width=0.49\textwidth]{norm05RMix}
 \caption{Left: Density of a normal mixture with $\mathbf{w} = (0.3, 0.4, 0.3)$, $\bm{\mu} = (10, 11, 13)$ and $\bm{\sigma} = (0.5, 0.5, 0.5)$. Right: Histogram of a random sample of size 1000 from that mixture.}
 \label{mixplot}
 \end{figure}
